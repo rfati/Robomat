@@ -1,0 +1,8 @@
+﻿{
+  "cafeUniteSerialManager_port": "COM5",
+  "cafeKapUniteSerialManager_port": "COM4",
+  "cafeRobotTutucuKiskacUniteSerialManager_port": "COM50",
+  "cafeOtomatUniteSerialManager_port": "COM6",
+  "IM20_port": "COM7",
+  "XArm_Ip": "192.168.1.195"
+}
