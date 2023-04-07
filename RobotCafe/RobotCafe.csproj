@@ -100,14 +100,13 @@
     <Compile Include="Serial\SerialPacket.cs" />
     <Compile Include="Device\Uniteler\Cafe\Dev\UrunAlma.cs" />
     <Compile Include="Device\Uniteler\Cafe\Dev\Kesici.cs" />
-    <Compile Include="Service\RobotCafeUnite.cs" />
+    <Compile Include="Service\RobotCafeUnite\RobotCafeUnite.cs" />
     <Compile Include="Service\PackageServiceMethod.cs" />
     <Compile Include="Service\ColdServiceMethod.cs" />
     <Compile Include="Service\HotServiceMethod.cs" />
     <Compile Include="Service\HomingService.cs" />
     <Compile Include="Service\IServiceMethod.cs" />
     <Compile Include="Service\OtomatUnite.cs" />
-    <Compile Include="Service\TestService.cs" />
     <Compile Include="Service\SaleService.cs" />
     <Compile Include="xarm\GetReadyToServiceXArmPath.cs" />
     <Compile Include="xarm\PackageServiceXArmPath.cs" />

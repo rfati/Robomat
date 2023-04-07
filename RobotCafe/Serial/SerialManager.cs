@@ -26,25 +26,28 @@ namespace RobotCafe.Serial
             SerialPacket = serialPacket;
         }
     }
+    public enum State
+    {
+        Idle,
+        Data_Sending,
+        Data_Sent,
+        Data_Receiving,
+        Data_Received,
+        TimeOut
+    }
+    public class TXRXData
+    {
+        public byte SlaveAddress;
+        public byte[] data;
+        public int receiveSize;
+    }
 
 
-    //public class SendReceiveData
-    //{
-    //    public byte[] data;
-    //    public int receiveBufferSize;
-    //    public int maxResponseWaitTime;
-
-    //    public SendReceiveData(byte[] data, int receiveBufferSize, int maxResponseWaitTime)
-    //    {
-    //        this.data = data;
-    //        this.receiveBufferSize = receiveBufferSize;
-    //        this.maxResponseWaitTime = maxResponseWaitTime;
-    //    }
-    //}
     public class SerialManager
     {
-        private string portName;
+        public string portName;
         private int baudRate;
+        object lockd = new object();
 
         //private ConcurrentQueue<SendReceiveData> sendReceiveDataQueue = new ConcurrentQueue<SendReceiveData>();
 
@@ -71,19 +74,25 @@ namespace RobotCafe.Serial
 
         public bool portIsOpened = false;
 
-        private object lockobj = new object();
-
         List<byte> readBuffer = new List<byte>();
-        bool still_waiting_resp = false;
 
-        int requiredRecSize;
+        ConcurrentQueue<TXRXData> transmitQueue = new ConcurrentQueue<TXRXData>();
 
+        private State state;
         public SerialManager(string portName, int baudRate = 9600)
         {
 
             serialPacket = new RTUResponsePacket();
             this.portName = portName;
             this.baudRate = baudRate;
+            this.state = State.Idle;
+
+        }
+
+        private void ResponseTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            this.state = State.TimeOut;
+            Logger.LogInfo("Serial Manager ResponseTimer_Elapsed.....TimeOut");
 
         }
 
@@ -144,46 +153,6 @@ namespace RobotCafe.Serial
             }
         }
 
-        //async void SendReceiveBW_DoWork(object sender, DoWorkEventArgs e)
-        //{
-        //    bool IsSendData = false;
-        //    bool IsReceiveData = false;
-
-        //    while (true)
-        //    {
-
-        //        if (sendReceiveDataQueue.TryDequeue(out SendReceiveData result))
-        //        {
-        //            try
-        //            {
-        //                IsSendData = this.SendData(result.data);
-        //                if (IsSendData == true)
-        //                {
-        //                    await Task.Delay(10);
-        //                    IsReceiveData = await this.GetResponse(result.receiveBufferSize, result.maxResponseWaitTime);
-        //                    if (IsReceiveData == false)
-        //                    {
-        //                        Logger.LogError("receive data hatası...");
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    Logger.LogError("Send data hatası...");
-        //                }
-
-
-
-        //            }
-        //            catch
-        //            {
-        //                Logger.LogError("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ");
-        //            }
-
-        //        }
-        //        await Task.Delay(1);
-        //    }
-        //}
-
 
         public bool Open()
         {
@@ -194,16 +163,15 @@ namespace RobotCafe.Serial
                 if (serialPort.IsOpen)
                 {
                     serialPort.ErrorReceived += new SerialErrorReceivedEventHandler(SerialPortErrorReceived);
-                    serialPort.DataReceived += SerialPortDataReceived;
 
                     serialPortBackgroundWorker = new BackgroundWorker();
                     serialPortBackgroundWorker.DoWork += new DoWorkEventHandler(SerialPortBackgroundWorker_DoWork);
                     serialPortBackgroundWorker.RunWorkerAsync();
 
 
-                    //sendReceiveBW = new BackgroundWorker();
-                    //sendReceiveBW.DoWork += new DoWorkEventHandler(SendReceiveBW_DoWork);
-                    //sendReceiveBW.RunWorkerAsync();
+                    sendReceiveBW = new BackgroundWorker();
+                    sendReceiveBW.DoWork += new DoWorkEventHandler(SendReceiveBW_DoWork);
+                    sendReceiveBW.RunWorkerAsync();
 
                     return true;
 
@@ -218,6 +186,133 @@ namespace RobotCafe.Serial
                 Logger.LogError("connection error: " + ex.Message);
                 return false;
             }
+        }
+
+        private void SendReceiveBW_DoWork(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                System.Timers.Timer ResponseTimer = new System.Timers.Timer();
+                int ResponseTimeOutInterval = 2000;
+
+                ResponseTimer.Interval = ResponseTimeOutInterval;
+                ResponseTimer.Elapsed += ResponseTimer_Elapsed;
+                ResponseTimer.AutoReset = false;
+                ResponseTimer.Enabled = false;
+
+
+
+                Logger.LogInfo("sendReceiveBW  running.......");
+                while (true)
+                {
+                    this.state = State.Idle;
+                    if (sendReceiveBW == null)
+                    {
+                        Logger.LogInfo("sendReceiveBW  disposing");
+                        sendReceiveBW.Dispose();
+                        return;
+                    }
+
+                    if (this.transmitQueue.Count > 0)
+                    {
+
+                        bool isDequed = this.transmitQueue.TryDequeue(out TXRXData txRXdata);
+
+
+                        int size = txRXdata.receiveSize;
+                        if (isDequed)
+                        {
+                            bool sent = this.SendData(txRXdata.data);
+                            if (sent)
+                            {
+                                Thread.Sleep(50);
+                                this.state = State.Data_Sent;
+
+                                Logger.LogInfo("txrxdata Sent slaveAddress: " + txRXdata.SlaveAddress);
+
+                                ResponseTimer.Enabled = true;
+
+                                while (size > 0)
+                                {
+                                    if (this.state == State.TimeOut)
+                                    {
+                                        Logger.LogInfo("Timer elapsed ama data gelmedi..");
+                                        break;
+                                    }
+                                    try
+                                    {
+                                        if(serialPort.BytesToRead > 0)
+                                        {
+                                            int readInt = serialPort.ReadByte();
+                                            if (readInt != -1)
+                                            {
+                                                this.state = State.Data_Receiving;
+                                                ResponseTimer.Enabled = false;
+                                                readBuffer.Add((byte)(readInt));
+                                                size--;
+                                            }
+                                            else
+                                            {
+                                                Logger.LogInfo("-1 int değeri okundu");
+                                            }
+                                        }
+
+
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Logger.LogError("Readbyte exception ex: " + ex.Message);
+                                    }
+
+                                    if(size == 0)
+                                    {
+                                        this.state = State.Data_Received;
+                                    }
+
+                                }
+
+                                if (this.state == State.Data_Received)
+                                {
+                                    Logger.LogInfo("process data startinggg......");
+                                    ProcessData();
+                                    Logger.LogInfo("process data finish......");
+                                    readBuffer.Clear();
+
+                                }
+                                else
+                                {
+                                    Logger.LogInfo("ProcessNullData startinggg......");
+                                    ProcessNullData(txRXdata.SlaveAddress);
+                                    Logger.LogInfo("ProcessNullData finish......");
+                                }
+
+                            }
+                            else
+                            {
+                                Logger.LogInfo("send data error......");
+                            }
+
+                        }
+                        else
+                        {
+                            Logger.LogError("Transmit que dequee error...");
+                        }
+
+                    }
+                    else
+                    {
+                        Thread.Sleep(1);
+                    }
+
+                }
+            }
+            catch(Exception ex)
+            {
+                Logger.LogError("SendReceiveBW_DoWork exception ex: " + ex.Message);
+            }
+            
+
+
         }
 
         public void Attach(RTUDevice observer)
@@ -260,105 +355,19 @@ namespace RobotCafe.Serial
 
         }
 
-        //public void SendReceive(byte[] data, int receiveBufferSize, int maxResponseWaitTime)
-        //{
-        //    lock(lockobj)
-        //    {
-        //        Logger.LogInfo("Qitem count at enquee: " + sendReceiveDataQueue.Count);
-        //        SendReceiveData sendReceiveData = new SendReceiveData(data, receiveBufferSize, maxResponseWaitTime);
-        //        sendReceiveDataQueue.Enqueue(sendReceiveData);
-        //    }
-
-        //}
 
 
-        public bool SendReq(byte[] data, int receiveSize)
+        public bool SendReq(TXRXData data)
         {
-            this.requiredRecSize = receiveSize;
-            return this.SendData(data);
-        }
-
-        private async Task<bool> GetResponse(int size, int maxResponseWaitTime)
-        {
-            await Task.Delay(1);
-            List<byte> readBuffer = new List<byte>();
-            bool result = false;
-            maxResponseWaitTime = 700;
             try
             {
-                int readByte = 255;
-                int notResponseCounter = 0;
-                //do
-                //{
-                //    if (serialPort.BytesToRead == 0)
-                //    {
-                //        await Task.Delay(1);
-                //        if (notResponseCounter >= maxResponseWaitTime)
-                //        {
-                //            Logger.LogInfo("maxResponseWaitTime  elapsed");
-                //            return false;
-                //        }
-
-
-                //        notResponseCounter++;
-                //        continue;
-                //    }
-                //    else
-                //    {
-                //        readByte = serialPort.ReadByte();
-                //    }
-
-
-
-                //}
-                //while (readByte == 255);
-
-                while (serialPort.BytesToRead == 0)
-                {
-                    await Task.Delay(1);
-                    if (notResponseCounter >= maxResponseWaitTime)
-                    {
-                        Logger.LogInfo("maxResponseWaitTime  elapsed");
-                        return false;
-                    }
-
-                    notResponseCounter++;
-                }
-
-
-                readByte = serialPort.ReadByte();
-                readBuffer.Add((byte)(readByte));
-
-                for (int i = 0; i < size - 1; i++)
-                {
-                    readByte = serialPort.ReadByte();
-                    readBuffer.Add((byte)(readByte));
-
-                }
-                for (int i = 0; i < readBuffer.Count; i++)
-                {
-                    this.serialPacket.Parse(readBuffer[i]);
-                    if (serialPacket.PackStatus == RTUPackStatus.Packet_Ready)
-                    {
-                        break;
-                    }
-                }
-                if (serialPacket.PackStatus == RTUPackStatus.Packet_Ready)
-                {
-                    this.Notify(serialPacket);
-                    result = true;
-                }
-                else
-                {
-                    Logger.LogError("packet NOT ready");
-                    result = false;
-                }
-                this.serialPacket.Reset();
-                return result;
+                this.transmitQueue.Enqueue(data);
+                Logger.LogInfo("Enquee data slaveAddres: " + data.SlaveAddress);
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                Logger.LogError("Get Response exception: " + ex.Message);
+                Logger.LogError("Serial Manager--SendReq(TXRXData data)  exception: " + e.Message);
                 return false;
             }
         }
@@ -366,33 +375,17 @@ namespace RobotCafe.Serial
 
         private bool SendData(byte[] data)
         {
-            foreach(byte d in data)
-            {
-                Logger.LogInfo("sendbyte: " + d);
-            }
-            Logger.LogInfo("--------------------------");
-            if (serialPort == null)
-                return false;
-
             bool result = false;
             try
             {
-
-                if (serialPort.IsOpen)
-                {
-                    this.serialPort.Write(data, 0, data.Length);
-                    result = true;
-                }
-                else
-                {
-                    Logger.LogError("RobotCafe SerialManager.SendData() serialPort.IsOpen: False");
-                    if (OnDeviceDisconnected != null)
-                        OnDeviceDisconnected(serialPort.PortName);
-                }
+                this.serialPort.Write(data, 0, data.Length);
+                result = true;
             }
             catch (Exception ex)
             {
                 Logger.LogError("RobotCafe SerialManager.SendData() exception: " + ex.Message);
+                if (OnDeviceDisconnected != null)
+                    OnDeviceDisconnected(serialPort.PortName);
             }
             return result;
         }
@@ -407,9 +400,13 @@ namespace RobotCafe.Serial
                 {
                     serialPortBackgroundWorker.Dispose();
                 }
+                if (sendReceiveBW != null)
+                {
+                    sendReceiveBW.Dispose();
+                }
 
                 serialPort.ErrorReceived -= new SerialErrorReceivedEventHandler(SerialPortErrorReceived);
-                serialPort.DataReceived -= SerialPortDataReceived;
+                //serialPort.DataReceived -= SerialPortDataReceived;
                 Thread.Sleep(1000);
                 serialPort.Close();
                 serialPort.Dispose();
@@ -428,118 +425,24 @@ namespace RobotCafe.Serial
         }
 
 
-        private void SerialPortDataReceived(object sender, SerialDataReceivedEventArgs e)
-        {
-            lock (lockobj)
-            {
-                int receivedByteLen = serialPort.BytesToRead;
 
-                if (receivedByteLen > 0)
-                {
-                    CollectData(receivedByteLen);
-                    if (readBuffer.Count >= requiredRecSize)
-                    {
-                        ProcessData();
-                        readBuffer.Clear();
-                    }
-                    else
-                    {
-                        Logger.LogInfo("buffere eklendi: " + receivedByteLen);
-                    }
-
-                }
-
-
-            }
-
-
-
-
-            //lock (lockobj)
-            //{
-            //    int receivedByteLen = serialPort.BytesToRead;
-
-
-
-
-
-            //    if (receivedByteLen > 0)
-            //    {
-            //        if (still_waiting_resp == true)
-            //        {
-            //            CollectData(receivedByteLen);
-            //            if (ProcessData() == true)
-            //            {
-
-            //                this.readBuffer.Clear();
-            //                still_waiting_resp = false;
-
-            //                this.Notify(serialPacket);
-
-            //            }
-            //            else
-            //            {
-            //                this.serialPacket.Reset();
-            //                still_waiting_resp = true;
-            //            }
-            //        }
-            //        else
-            //        {
-            //            CollectData(receivedByteLen);
-            //            if (ProcessData() == true)
-            //            {
-
-            //                this.readBuffer.Clear();
-            //                still_waiting_resp = false;
-            //                this.Notify(serialPacket);
-            //            }
-            //            else
-            //            {
-            //                this.serialPacket.Reset();
-            //                still_waiting_resp = true;
-            //            }
-            //        }
-            //    }
-
-            //}
-
-        }
-
-        private void CollectData(int receivedByteLen)
-        {
-            byte readByte;
-            while (receivedByteLen > 0)
-            {
-                readByte = (byte)serialPort.ReadByte();
-                Logger.LogInfo("readByte: " + readByte);
-                readBuffer.Add((byte)(readByte));
-                receivedByteLen--;
-            }
-            Logger.LogInfo("--------------------------");
-        }
-
-        //private bool ProcessData()
-        //{
-        //    for (int i = 0; i < readBuffer.Count; i++)
-        //    {
-        //        this.serialPacket.Parse(readBuffer[i]);
-
-        //    }
-        //    if (serialPacket.PackStatus == RTUPackStatus.Packet_Ready)
-        //    {
-        //        return true;
-        //    }
-        //    else
-        //        return false;
-        //}
 
         private void ProcessData()
         {
-            for (int i = 0; i < readBuffer.Count; i++)
+            try
             {
-                this.serialPacket.Parse(readBuffer[i]);
+                for (int i = 0; i < readBuffer.Count; i++)
+                {
+                    this.serialPacket.Parse(readBuffer[i]);
 
+                }
             }
+            catch(Exception e)
+            {
+                Logger.LogError("serialPacke parsing exception: " + e.Message);
+            }
+
+
             if (serialPacket.PackStatus == RTUPackStatus.Packet_Ready)
             {
                 readBuffer.Clear();
@@ -547,10 +450,26 @@ namespace RobotCafe.Serial
             }
             else
             {
+                Logger.LogError("serialPacket.PackStatus != RTUPackStatus.Packet_Ready");
                 this.serialPacket.Reset();
             }
 
 
         }
+
+        private void ProcessNullData(byte slaveAddress)
+        {
+
+            foreach (RTUDevice device in observers)
+            {
+                if (device.slaveAddress == slaveAddress)
+                {
+                    device.Update(null);
+                    break;
+                }
+
+            }
+        }
+
     }
 }

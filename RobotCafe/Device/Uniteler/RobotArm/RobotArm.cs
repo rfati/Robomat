@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RobotCafe.Devices
@@ -36,6 +37,7 @@ namespace RobotCafe.Devices
             }
             catch (Exception ex)
             {
+                Logger.LogError("RobotArm connect exception: " + ex.Message);
                 return false;
             }
         }
@@ -54,13 +56,13 @@ namespace RobotCafe.Devices
 
 
 
-        public async Task<int> SetPosition(List<Pos> position)
+        public int SetPosition(List<Pos> position)
         {
             int ret = xArmController.SetPosition(position);
             return ret;
         }
 
-        public async Task<int> SetPosition(int ret, List<float[]> position, float speed = 5, bool wait = true)
+        public int SetPosition(int ret, List<float[]> position, float speed = 5, bool wait = true)
         {
             if (ret != 0)
                 return 1;
@@ -68,14 +70,14 @@ namespace RobotCafe.Devices
             return ret;
         }
 
-        public async Task<int> SetTCPPosition(float[] pos, float speed = 5, bool wait = true)
+        public int SetTCPPosition(float[] pos, float speed = 5, bool wait = true)
         {
             int ret = xArmController.SetTCPPosition(pos: pos, speed: speed, wait: wait);
             return ret;
 
         }
 
-        public async Task<int> DoHoming()
+        public int DoHoming()
         {
             int ret = 0;
             List<float[]> positionList = new List<float[]>();
@@ -85,7 +87,7 @@ namespace RobotCafe.Devices
             positionList.Clear();
             positionList.Add(pos1);
 
-            return await this.SetPosition(ret, positionList, speed: 10);
+            return this.SetPosition(ret, positionList, speed: 10);
 
         }
     }

@@ -29,21 +29,8 @@ namespace RobotCafe.Service
 
         public int DoService(Product product)
         {
-
-
-            var ServiceTask = Task.Run(() => this.method.DoService(this.otomatUnite, this.robotCafeUnite, product));
-            ServiceTask.Wait();
-            return ServiceTask.Result;
-        }
-
-
-
-        public int GetReady()
-        {
-
-            var GetReadyTask = Task.Run(() => this.method.GetReadyToService(this.otomatUnite, this.robotCafeUnite));
-            GetReadyTask.Wait();
-            return GetReadyTask.Result;
+            int ret = this.method.DoService(this.otomatUnite, this.robotCafeUnite, product);
+            return ret;
         }
 
         public void SetServiceMethod(IServiceMethod method)

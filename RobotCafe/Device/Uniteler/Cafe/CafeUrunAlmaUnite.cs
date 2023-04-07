@@ -29,12 +29,6 @@ namespace RobotCafe.Devices
 
             this.urunAlma = new UrunAlma();
             this.slaveAddress = 0x29;
-            //this.maxResponseWaitTime = 500;
-            //this.stateChangeTime = 3;
-            //this.MAX_TRY_COUNTER = 20;
-            this.NextReadDelay = 0;
-
-
 
             for (ushort regaddress = this.urunAlma.FirstReadAddress; regaddress <= this.urunAlma.LastReadAddress; regaddress++)
             {
@@ -44,34 +38,22 @@ namespace RobotCafe.Devices
 
 
         }
-        public async Task<int> SetPositionTask(int ret, short? donmePos, short? lineerPos, int delay = 10)
+        public int SetPositionTask(int ret, short? donmePos, short? lineerPos, int delay = 10)
         {
             if (ret != 0)
                 return 1;
-            ret = await SetPosition(ret, donmePos, lineerPos);
-            return await IsPositionOK(ret, donmePos, lineerPos);
+            ret =   SetPosition(ret, donmePos, lineerPos);
+            ret =   IsPositionOK(ret, donmePos, lineerPos);
 
-        }
-        public async Task<int> SetPosition(int ret, short? donmePos, short? lineerPos)
-        {
             if (ret != 0)
-                return 1;
-            List<Motor> motorList = new List<Motor>();
-            if (donmePos != null)
             {
-                this.urunAlma.UrunAlma_Servo.TargetPosRegisterWrite.Register_Target_Value = (short)donmePos;
-                motorList.Add(this.urunAlma.UrunAlma_Servo);
-            }
-            if (lineerPos != null)
-            {
-                this.urunAlma.UrunAlma_Lineer.TargetPosRegisterWrite.Register_Target_Value = (short)lineerPos;
-                motorList.Add(this.urunAlma.UrunAlma_Lineer);
+                Logger.LogError("Cafe Urun Alma ünitesi SetPositionTask Error.");
             }
 
-            return await SetMotorPosition(motorList);
+            return ret;
+
         }
-
-        public async Task<int> IsPositionOK(int ret, short? donmePos, short? lineerPos)
+        public int SetPosition(int ret, short? donmePos, short? lineerPos)
         {
             if (ret != 0)
                 return 1;
@@ -87,36 +69,49 @@ namespace RobotCafe.Devices
                 motorList.Add(this.urunAlma.UrunAlma_Lineer);
             }
 
-            return await IsMotorPositionOK(motorList);
+            ret =   SetMotorPosition(motorList);
+            if (ret != 0)
+            {
+                Logger.LogError("Cafe Urun Alma ünitesi SetPosition Error.");
+            }
+
+            return ret;
         }
 
-        public async Task<int> ServoPosAyarla(short Pos)
+        public int IsPositionOK(int ret, short? donmePos, short? lineerPos)
         {
+            if (ret != 0)
+                return 1;
             List<Motor> motorList = new List<Motor>();
+            if (donmePos != null)
+            {
+                this.urunAlma.UrunAlma_Servo.TargetPosRegisterWrite.Register_Target_Value = (short)donmePos;
+                motorList.Add(this.urunAlma.UrunAlma_Servo);
+            }
+            if (lineerPos != null)
+            {
+                this.urunAlma.UrunAlma_Lineer.TargetPosRegisterWrite.Register_Target_Value = (short)lineerPos;
+                motorList.Add(this.urunAlma.UrunAlma_Lineer);
+            }
 
-            this.urunAlma.UrunAlma_Servo.TargetPosRegisterWrite.Register_Target_Value = Pos;
-            motorList.Add(this.urunAlma.UrunAlma_Servo);
-            return await SetMotorPosition(motorList);
+            ret =   IsMotorPositionOK(motorList);
+            if (ret != 0)
+            {
+                Logger.LogError("Cafe Urun Alma ünitesi IsPositionOK Error.");
+            }
+
+            return ret;
         }
 
-        public async Task<int> LineerPosAyarla(short Pos)
-        {
-            List<Motor> motorList = new List<Motor>();
-
-            this.urunAlma.UrunAlma_Lineer.TargetPosRegisterWrite.Register_Target_Value = Pos;
-            motorList.Add(this.urunAlma.UrunAlma_Lineer);
-            return await SetMotorPosition(motorList);
-        }
 
 
         public bool UrunAlindimi()
         {
             int isSet = -1;
-            var sensorOkuTask = Task.Run(() => SensorOku());
-            sensorOkuTask.Wait();
-            if (sensorOkuTask.Result != null)
+            var sensorOkuResult = SensorOku();
+            if (sensorOkuResult != null)
             {
-                int sensorValue = sensorOkuTask.Result.CurrentValRegisterRead.Register_Read_Value;
+                int sensorValue = sensorOkuResult.CurrentValRegisterRead.Register_Read_Value;
                 isSet = sensorValue & (0x0001);
                 if (isSet == 1)
                     return false;
@@ -125,18 +120,19 @@ namespace RobotCafe.Devices
             }
             else
             {
+                Logger.LogError("Cafe Urun Alma ünitesi UrunAlindimi Error.");
                 return false;
             }
 
         }
 
-        private async Task<Sensor> SensorOku()
+        private Sensor SensorOku()
         {
             List<Sensor> sensorList = new List<Sensor>();
             sensorList.Clear();
             sensorList.Add(this.urunAlma.urunAlmaSensor);
 
-            SensorCommandResult ret = await ReadMultipleSensor(sensorList);
+            SensorCommandResult ret =   ReadMultipleSensor(sensorList);
             if (!ret.IsSuccess())
             {
                 return null;

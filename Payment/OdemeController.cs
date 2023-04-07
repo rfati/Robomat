@@ -46,7 +46,7 @@ namespace Payment
 
     //    }
 
-    //    //public async Task<int> DoGunSonuIslem()
+    //    //public int DoGunSonuIslem()
     //    //{
 
     //    //    var satisIslemTask = Task.Run(() => paxDevice.SendGunSonuCommand());

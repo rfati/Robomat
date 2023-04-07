@@ -27,8 +27,10 @@ namespace Payment
         }
         public void Start()
         {
+            Logger.LogInfo("OdemeController--> Starting... ");
             try
             {
+
                 this.robomatConfig = JsonConvert.DeserializeObject<RobomatConfig>(File.ReadAllText(@"C:\Robomat\RobomatConfig\RobomatConfig.json"));
                 this.paxDevice = new PaxDevice();
                 bool isPaxConnected = this.paxDevice.Connect(this.robomatConfig.IM20_port);
@@ -41,6 +43,7 @@ namespace Payment
                 else
                 {
                     this.IsRunning = false;
+                    Logger.LogError("OdemeController--> Start() ethis.IsRunning = false ");
                 }
 
             }
@@ -89,7 +92,7 @@ namespace Payment
 
             //    return ret;
 
-            //    //await Task.Delay(3000);
+            //    //Thread.Sleep(3000);
             //    //PaymentIslemResult retIptal = await paxDevice.SendIptalIstekCommand(price);
             //    //return retIptal;
             //}

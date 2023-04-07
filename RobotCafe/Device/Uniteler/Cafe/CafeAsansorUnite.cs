@@ -15,11 +15,6 @@ namespace RobotCafe.Devices
         public CafeAsansorUnite()
         {
             this.slaveAddress = 0x41;
-            //this.maxResponseWaitTime = 500;
-            //this.stateChangeTime = 3;
-            //this.MAX_TRY_COUNTER = 20;
-            this.NextReadDelay = 0;
-
 
             ushort lastReg = 3;
             for (ushort regaddress = 1; regaddress <= lastReg; regaddress++)
@@ -31,25 +26,6 @@ namespace RobotCafe.Devices
             this.asansor = new CafeAsansor();
         }
 
-
-        public async Task<int> SetPosition(short Pos)
-        {
-
-            List<Motor> motorList = new List<Motor>();
-            MotorCommandResult retMotor = null;
-
-            motorList.Clear();
-            this.asansor.Lineer.TargetPosRegisterWrite.Register_Target_Value = Pos;
-            motorList.Add(this.asansor.Lineer);
-
-            retMotor = await WriteReadMultipleMotor(motorList);
-
-            if (!retMotor.IsSuccess())
-            {
-                return 1;
-            }
-            return 0;
-        }
 
 
 
@@ -74,13 +50,13 @@ namespace RobotCafe.Devices
 
         }
 
-        private async Task<Sensor> SensorOku()
+        private Sensor SensorOku()
         {
             List<Sensor> sensorList = new List<Sensor>();
             sensorList.Clear();
             sensorList.Add(this.asansor.urunTeslimSensor);
 
-            SensorCommandResult ret = await ReadMultipleSensor(sensorList);
+            SensorCommandResult ret = ReadMultipleSensor(sensorList);
             if (!ret.IsSuccess())
             {
                 return null;
@@ -90,15 +66,23 @@ namespace RobotCafe.Devices
 
         }
 
-        public async Task<int> SetPositionTask(int ret, short? dikeyPos)
+        public int SetPositionTask(int ret, short? dikeyPos)
         {
             if (ret != 0)
                 return 1;
 
-            ret = await SetPosition(ret, dikeyPos);
-            return await IsPositionOK(ret, dikeyPos);
+            ret = SetPosition(ret, dikeyPos);
+            ret = IsPositionOK(ret, dikeyPos);
+
+            if (ret != 0)
+            {
+                Logger.LogError("Cafe Asansör sunum ünitesi SetPositionTask Error.");
+            }
+
+            return ret;
+
         }
-        public async Task<int> SetPosition(int ret, short? dikeyPos)
+        public int SetPosition(int ret, short? dikeyPos)
         {
             if (ret != 0)
                 return 1;
@@ -109,10 +93,16 @@ namespace RobotCafe.Devices
                 motorList.Add(this.asansor.Lineer);
             }
 
-            return await SetMotorPosition(motorList);
+            ret = SetMotorPosition(motorList);
+            if (ret != 0)
+            {
+                Logger.LogError("Cafe Asansör sunum ünitesi SetPosition Error.");
+            }
+
+            return ret;
         }
 
-        public async Task<int> IsPositionOK(int ret, short? dikeyPos)
+        public int IsPositionOK(int ret, short? dikeyPos)
         {
             if (ret != 0)
                 return 1;
@@ -123,7 +113,13 @@ namespace RobotCafe.Devices
                 motorList.Add(this.asansor.Lineer);
             }
 
-            return await IsMotorPositionOK(motorList);
+            ret = IsMotorPositionOK(motorList);
+            if (ret != 0)
+            {
+                Logger.LogError("Cafe Asansör sunum ünitesi IsPositionOK Error.");
+            }
+
+            return ret;
         }
     }
 }

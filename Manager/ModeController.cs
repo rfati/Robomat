@@ -9,6 +9,7 @@ using RabbitMQ.Client.Events;
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -37,6 +38,7 @@ namespace Manager
                 bool isPaxConnected = this.Connect(this.robomatConfig.ModeSelector_port);
                 if(isPaxConnected)
                 {
+                    Logger.LogInfo("ModeController connected....");
                     this.serialManager.OnDeviceDisconnected += ModeSelectorDevice_OnDeviceDisconnected;
                     this.serialManager.OnDeviceConnected += ModeSelectorDevice_OnDeviceConnected;
                     this.serialManager.OnDeviceDataReceived += ModeSelectorDevice_OnDeviceDataReceived;
@@ -44,27 +46,29 @@ namespace Manager
                 }
                 else
                 {
+                    Logger.LogError("ModeController NOT  connected....");
                     this.IsModeSelectorConnected = false;
                 }
 
-                this.modeConsumer = new MessageQueueConsumer("ModeSelectorResponseQueue");
-                this.modeConsumer.Start();
-                if (this.modeConsumer.connection.IsOpen == true)
-                {
-                    this.modeConsumer.connection.ConnectionShutdown += ModeConsumer_OnDeviceDisconnected;
-                    this.modeConsumer.consumer.Received += this.HandleModeConsumerResponseMessage;
-                    this.IsModeConsumerConnected = true;
-                }
+                //this.modeConsumer = new MessageQueueConsumer("ModeSelectorResponseQueue");
+                //this.modeConsumer.Start();
+                //if (this.modeConsumer.connection.IsOpen == true)
+                //{
+                //    this.modeConsumer.connection.ConnectionShutdown += ModeConsumer_OnDeviceDisconnected;
+                //    this.modeConsumer.consumer.Received += this.HandleModeConsumerResponseMessage;
+                //    this.IsModeConsumerConnected = true;
+                //}
                     
 
 
-                if(this.IsModeSelectorConnected && this.IsModeConsumerConnected)
+                if(this.IsModeSelectorConnected)
                 {
                     this.IsRunning = true;
                 }
             }
             catch (Exception ex)
             {
+                Logger.LogError("ModeController NOT  connected....exception:  " + ex.Message);
                 this.IsModeSelectorConnected = false;
             }
 
@@ -156,20 +160,43 @@ namespace Manager
         }
 
 
-        private void ModeSelectorDevice_OnDeviceDataReceived(byte command)
+        private void ModeSelectorDevice_OnDeviceDataReceived(string receivedStr)
         {
-            if (command == 0x0A)
+            Logger.LogInfo("Mode Selector data input received: " + receivedStr);
+            string[] values = receivedStr.Split(':');
+            Logger.LogInfo("value 0 -" + values[0]);
+            Logger.LogInfo("value 1 -" + values[1]);
+
+
+            if (values[0].Equals("Button value"))
             {
-                this.SetMode(Mode.SaleService);
+                if (values[1].StartsWith("4"))
+                {
+                    Logger.LogInfo("Yükleme modunda");
+                    this.SetMode(Mode.Yukleme);
+                }
+                else if (values[1].StartsWith("2"))
+                {
+                    Logger.LogInfo("Bakım modunda");
+                    this.SetMode(Mode.Bakim);
+                }
+                else if (values[1].StartsWith("1"))
+                {
+                    Logger.LogInfo("Satış modunda");
+                    this.SetMode(Mode.SaleService);
+                }
+                else
+                {
+
+                    Logger.LogInfo("yanlış komut değeri: ");
+
+                }
             }
-            else if (command == 0x3A)
+            else
             {
-                this.SetMode(Mode.Yukleme);
+                Logger.LogInfo("ali bircan diyorki yok artık");
             }
-            else if (command == 0x5A)
-            {
-                this.SetMode(Mode.Bakim);
-            }
+
         }
 
 
@@ -182,7 +209,7 @@ namespace Manager
             string jsonMessage = JsonConvert.SerializeObject(robomatStatus);
             publisher = new Publisher(queueName: "RobomatServiceQueue", message: jsonMessage);
 
-            await Task.Delay(2000);
+            Thread.Sleep(2000);
         }
 
 

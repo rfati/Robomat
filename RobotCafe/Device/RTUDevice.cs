@@ -18,10 +18,7 @@ namespace RobotCafe.Devices
         CommandACKReceived,
         StatusSent,
         StatusResponseReceived,
-        StatusResponseOK,
-        StatusResponseNOK,
-        TimeOut,
-        DeviceError
+        TimeOut
     }
     public class FunctionCode
     {
@@ -34,18 +31,8 @@ namespace RobotCafe.Devices
     {
         private bool isAttachedToCOM = false;
 
-        private static object _locker = new object();
-        protected System.Timers.Timer FC16ResponseTimer;
-        protected System.Timers.Timer FC3ResponseTimer;
-        protected int ResponseTimeoutCounter = 0;
-        protected int MaxResponseTimeoutCounter = 5;
-        protected int ResponseTimeOutInterval = 4000;
-
-        protected int MAX_TRY_COUNTER = 200;
         protected int MAX_WRITE_TRY_COUNTER = 10;
-        protected int NextReadDelay = 10;
-        protected int maxResponseWaitTime = 400;
-        protected int stateChangeTime = 5;
+
 
         public State state;
         public byte slaveAddress { get; set; }
@@ -53,10 +40,27 @@ namespace RobotCafe.Devices
 
         public SerialManager serialManager;
 
+        System.Timers.Timer ResponseTimer = new System.Timers.Timer();
+        int ResponseTimeOutInterval = 3000;
+
+
+
         public RTUDevice()
         {
+            ResponseTimer.Interval = ResponseTimeOutInterval;
+            ResponseTimer.Elapsed += ResponseTimer_Elapsed;
+            ResponseTimer.AutoReset = false;
+            ResponseTimer.Enabled = false;
+
             this.state = State.Idle;
             this.RegisterReadList = new List<RegisterRead>();
+
+        }
+
+        private void ResponseTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            Logger.LogInfo("Timer_Elapsed.....");
+            this.state = State.TimeOut;
         }
 
 
@@ -71,7 +75,7 @@ namespace RobotCafe.Devices
                     this.serialManager = serialManager;
                     this.serialManager.Attach(this);
 
-                    this.serialManager.PacketReceived += Update;
+                    //this.serialManager.PacketReceived += Update;
                 }
 
                 this.isAttachedToCOM = true;
@@ -90,7 +94,7 @@ namespace RobotCafe.Devices
                 if (this.isAttachedToCOM == true)
                 {
                     this.serialManager.Detach(this);
-                    this.serialManager.PacketReceived -= Update;
+                    //this.serialManager.PacketReceived -= Update;
                 }
                 this.isAttachedToCOM = false;
                 return true;
@@ -104,7 +108,7 @@ namespace RobotCafe.Devices
 
 
 
-        protected async Task<int> SetMotorPosition(List<Motor> motorList, bool isTogether = false)
+        protected int SetMotorPosition(List<Motor> motorList, bool isTogether = false)
         {
             MotorCommandResult ret = new MotorCommandResult();
             List<RegisterWrite> RegisterWriteList = new List<RegisterWrite>();
@@ -117,16 +121,20 @@ namespace RobotCafe.Devices
             {
                 if (isTogether == true)
                 {
-                    ret.retWriteRegisterResult = await this.WriteMultipleRegisterTogether(RegisterWriteList);
+                    ret.retWriteRegisterResult = this.WriteMultipleRegisterTogether(RegisterWriteList);
                 }
                 else
                 {
-                    ret.retWriteRegisterResult = await this.WriteMultipleRegister(RegisterWriteList);
+                    ret.retWriteRegisterResult = this.WriteMultipleRegister(RegisterWriteList);
                 }
 
                 if (ret.retWriteRegisterResult == 0)
                 {
                     break;
+                }
+                else
+                {
+                    Logger.LogError("SetMotorPosition ret.retWriteRegisterResult != 0 ret.retWriteRegisterResult: " + ret.retWriteRegisterResult + "  slave: " + this.slaveAddress);
                 }
             }
 
@@ -142,14 +150,14 @@ namespace RobotCafe.Devices
         }
 
 
-        protected async Task<int> IsMotorPositionOK(List<Motor> motorList)
+
+        protected int IsMotorPositionOK(List<Motor> motorList)
         {
             MotorCommandResult ret = new MotorCommandResult();
 
             for(int i = 0; i < 400; i++)
             {
-                await Task.Delay(40);
-                ret.retReadRegisterResult = await this.ReadAllRegisters();
+                ret.retReadRegisterResult = this.ReadAllRegisters();
                 if (ret.retReadRegisterResult == 0)
                 {
                     foreach (var motor in motorList)
@@ -164,6 +172,7 @@ namespace RobotCafe.Devices
                     if (motorList.Any(o => o.PosStatusRegisterRead.Register_Read_Value != 0))
                     {
                         ret.retPosStatusResult = 1;
+                        Thread.Sleep(100);
                         continue;
                     }
                     else
@@ -174,6 +183,7 @@ namespace RobotCafe.Devices
                     if (motorList.Any(o => o.CurrentPosRegisterRead.Register_Read_Value != o.TargetPosRegisterWrite.Register_Target_Value))
                     {
                         ret.retCurrentPosResult = 1;
+                        Thread.Sleep(100);
                         continue;
                     }
                     else
@@ -185,8 +195,11 @@ namespace RobotCafe.Devices
                 }
                 else
                 {
+                    Logger.LogError("Read response gelmedi.. slaveAddress: " + this.slaveAddress);
                     continue;
                 }
+
+
             }
 
             if (ret.retReadRegisterResult == 0 && ret.retCurrentPosResult == 0 && ret.retPosStatusResult == 0)
@@ -197,99 +210,7 @@ namespace RobotCafe.Devices
 
         }
 
-
-        protected async Task<MotorCommandResult> WriteReadMultipleMotor(List<Motor> motorList, bool isTogether = false)
-        {
-            MotorCommandResult ret = new MotorCommandResult();
-
-
-            List<Motor> motors = new List<Motor>();
-            motors.AddRange(motorList);
-            List<RegisterWrite> RegisterWriteList = new List<RegisterWrite>();
-            foreach (var motor in motors)
-            {
-                RegisterWriteList.Add(motor.TargetPosRegisterWrite);
-            }
-
-            int counter = 0;
-
-            for (counter = 0; counter <= MAX_WRITE_TRY_COUNTER; counter++)
-            {
-                if(isTogether == true)
-                {
-                    ret.retWriteRegisterResult = await this.WriteMultipleRegisterTogether(RegisterWriteList);
-                }
-                else
-                {
-                    ret.retWriteRegisterResult = await this.WriteMultipleRegister(RegisterWriteList);
-                }
-
-                if (ret.retWriteRegisterResult == 0)
-                {
-                    break;
-                }
-            }
-
-            if (ret.retWriteRegisterResult != 0)
-            {
-                Logger.LogError("WriteMultipleRegister return !=0   -- retWriteRegisterResult: " + ret.retWriteRegisterResult);
-                return ret;
-            }
-
-
-
-            for (counter = 0; counter <= MAX_TRY_COUNTER; counter++)
-            {
-                await Task.Delay(300);
-                Logger.LogError("MAX_TRY_COUNTER  try counter: slaveaddress" + this.slaveAddress);
-                ret.retReadRegisterResult = await this.ReadAllRegisters();
-                if (ret.retReadRegisterResult == 0)
-                {
-                    foreach (var motor in motors)
-                    {
-                        short motor_pos_status_value = this.RegisterReadList.First(o => o.Register_Address == motor.PosStatusRegisterRead.Register_Address).Register_Read_Value;
-                        short motor_current_pos_value = this.RegisterReadList.First(o => o.Register_Address == motor.CurrentPosRegisterRead.Register_Address).Register_Read_Value;
-
-                        motor.PosStatusRegisterRead.Register_Read_Value = motor_pos_status_value;
-                        if (motor_pos_status_value != 0)
-                        {
-                            Logger.LogError("motor_pos_status_value !=0   -- motor PosStatusRegisterRead  registerAddress " + motor.PosStatusRegisterRead.Register_Address);
-                        }
-                        motor.CurrentPosRegisterRead.Register_Read_Value = motor_current_pos_value;
-
-                    }
-
-                    if (motors.Any(o => o.PosStatusRegisterRead.Register_Read_Value != 0))
-                    {
-                        ret.retPosStatusResult = 1;
-                        continue;
-                    }
-                    else
-                    {
-                        ret.retPosStatusResult = 0;
-                    }
-
-                    if (motors.Any(o => o.CurrentPosRegisterRead.Register_Read_Value != o.TargetPosRegisterWrite.Register_Target_Value))
-                    {
-                        ret.retCurrentPosResult = 1;
-                        continue;
-                    }
-                    else
-                    {
-                        ret.retCurrentPosResult = 0;
-                        break;
-                    }
-
-
-                }
-            }
-
-
-            return ret;
-
-        }
-
-        protected async Task<RelayCommandResult> WriteMultipleRelay(List<Relay> RelayList)
+        protected RelayCommandResult WriteMultipleRelay(List<Relay> RelayList)
         {
             RelayCommandResult ret = new RelayCommandResult();
 
@@ -307,7 +228,7 @@ namespace RobotCafe.Devices
 
             for (counter = 0; counter <= MAX_WRITE_TRY_COUNTER; counter++)
             {
-                ret.retWriteRegisterResult = await this.WriteMultipleRegister(RegisterWriteList);
+                ret.retWriteRegisterResult = this.WriteMultipleRegister(RegisterWriteList);
 
                 if (ret.retWriteRegisterResult == 0)
                 {
@@ -321,17 +242,15 @@ namespace RobotCafe.Devices
 
 
 
-        protected async Task<SensorCommandResult> ReadMultipleSensor(List<Sensor> sensorList)
+        protected SensorCommandResult ReadMultipleSensor(List<Sensor> sensorList)
         {
             SensorCommandResult ret = new SensorCommandResult();
             List<Sensor> sensors = new List<Sensor>();
             sensors.AddRange(sensorList);
 
-            int counter = 0;
-            for (counter = 0; counter <= MAX_TRY_COUNTER; counter++)
+            for (int counter = 0; counter <= 2; counter++)
             {
-                await Task.Delay(150);
-                ret.retReadRegisterResult = await this.ReadAllRegisters();
+                ret.retReadRegisterResult = this.ReadAllRegisters();
                 if (ret.retReadRegisterResult == 0)
                 {
                     foreach (var sensor in sensors)
@@ -356,135 +275,8 @@ namespace RobotCafe.Devices
 
 
 
-        //protected async Task<int> WriteMultipleRegister(List<RegisterWrite> registerWrites)
-        //{
-        //    int ret = -1;
 
-        //    foreach (var item in registerWrites)
-        //    {
-        //        short[] values = { item.Register_Target_Value };
-        //        this.SendReceiveMultipleWriteRegister(item.Register_Address, 1, values);
-
-
-        //        int checkCounter = 0;
-        //        while (this.state == State.CommandSent)
-        //        {
-        //            checkCounter++;
-        //            await Task.Delay(100);
-        //            Logger.LogError("CommandSent statede bekliyor.slave address: " + this.slaveAddress);
-        //            if (checkCounter > 10)
-        //            {
-        //                Logger.LogError("CommandSent statede bekledi.slave address ve > 1000ms oldu: " + this.slaveAddress);
-        //                break;
-        //            }
-
-        //        }
-
-
-        //        if (this.state == State.CommandACKReceived)
-        //        {
-        //            Logger.LogError("CommandACKReceived: " + this.slaveAddress);
-        //            ret = 0; //success
-        //        }
-        //        else if (this.state == State.CommandSent)
-        //        {
-        //            Logger.LogError("command sentde kaldi.slave address: " + this.slaveAddress);
-        //            ret = 1;
-        //        }
-        //        else
-        //        {
-
-        //        }
-
-        //    }
-
-        //    return ret;
-        //}
-
-
-        //protected async Task<int> WriteMultipleRegisterTogether(List<RegisterWrite> registerWrites)
-        //{
-        //    int ret = -1;
-        //    ushort Start_reg_address = registerWrites.First().Register_Address;
-        //    ushort reg_count = (ushort)registerWrites.Count;
-        //    List<short> valueList = new List<short>();
-        //    foreach (var item in registerWrites)
-        //    {
-        //        valueList.Add(item.Register_Target_Value);
-        //    }
-        //    this.SendReceiveMultipleWriteRegister(Start_reg_address, reg_count, valueList.ToArray());
-        //    int checkCounter = 0;
-        //    while (this.state == State.CommandSent)
-        //    {
-        //        checkCounter++;
-        //        await Task.Delay(100);
-        //        if (checkCounter > 10)
-        //        {
-        //            break;
-        //        }
-        //    }
-
-
-        //    if (this.state == State.CommandACKReceived)
-        //    {
-        //        Logger.LogError("CommandACKReceived: " + this.slaveAddress);
-        //        ret = 0; //success
-        //    }
-        //    else if (this.state == State.CommandSent)
-        //    {
-        //        Logger.LogError("command kaldi.slave address: " + this.slaveAddress);
-        //        ret = 1;
-        //    }
-        //    else
-        //    {
-
-        //    }
-
-        //    return ret;
-        //}
-
-
-        //protected async Task<int> ReadAllRegisters()
-        //{
-        //    int ret = 1;
-        //    int checkCounter = 0;
-
-        //    this.SendReceiveMultipleReadRegister(RegisterReadList.First().Register_Address, (ushort)(RegisterReadList.Last().Register_Address - RegisterReadList.First().Register_Address + 1), (RegisterReadList.Count * 2 + 5));
-
-        //    while (this.state == State.StatusSent)
-        //    {
-        //        checkCounter++;
-        //        await Task.Delay(100);
-        //        Logger.LogError("status sentde bekliyor.slave address: " + this.slaveAddress);
-        //        if (checkCounter > 10)
-        //        {
-        //            Logger.LogError("StatusSent statede bekledi.slave address ve > 1000ms oldu: " + this.slaveAddress);
-        //            break;
-        //        }
-        //    }
-
-
-        //    if (this.state == State.StatusResponseReceived)
-        //    {
-        //        Logger.LogError("StatusResponseReceived: " + this.slaveAddress);
-        //        ret = 0; //success
-        //    }
-        //    else if(this.state == State.StatusSent)
-        //    {
-        //        Logger.LogError("status kaldi.slave address: " + this.slaveAddress);
-        //        ret = 1;
-        //    }
-        //    else
-        //    {
-
-        //    }
-
-        //    return ret;
-        //}
-
-
-
-        protected async Task<int> WriteMultipleRegister(List<RegisterWrite> registerWrites)
+        protected int WriteMultipleRegister(List<RegisterWrite> registerWrites)
         {
             int ret = -1;
 
@@ -494,37 +286,33 @@ namespace RobotCafe.Devices
                 bool write = this.SendMultipleWriteRegister(item.Register_Address, 1, values);
                 if (write != true)
                 {
-                    return 1;
+                    Logger.LogError("WriteMultipleRegister bool write= false");
+                    return -1;
                 }
 
-                await Task.Delay(50);
 
 
-                int checkCounter = 0;
-                while (this.state == State.CommandSent)
+                ResponseTimer.Enabled = true;
+
+                while (true)
                 {
-                    checkCounter++;
-                    await Task.Delay(20);
-                    if (checkCounter > 100)
+                    if (this.state == State.CommandACKReceived)
                     {
+                        ret = 0; //success
+                        break;
+                    }
+                    else if (this.state == State.TimeOut)
+                    {
+                        Logger.LogError("WriteMultipleRegister this.state == State.CommandSent TimeOut oluştu SlaveAdd: " + this.slaveAddress);
+                        ret = 1;
                         break;
                     }
 
+                    Thread.Sleep(10);
                 }
 
 
-                if (this.state == State.CommandACKReceived)
-                {
-                    ret = 0; //success
-                }
-                else if (this.state == State.CommandSent)
-                {
-                    ret = 1;
-                }
-                else
-                {
 
-                }
 
             }
 
@@ -532,9 +320,11 @@ namespace RobotCafe.Devices
         }
 
 
-        protected async Task<int> WriteMultipleRegisterTogether(List<RegisterWrite> registerWrites)
+        protected int WriteMultipleRegisterTogether(List<RegisterWrite> registerWrites)
         {
             int ret = -1;
+
+
             ushort Start_reg_address = registerWrites.First().Register_Address;
             ushort reg_count = (ushort)registerWrites.Count;
             List<short> valueList = new List<short>();
@@ -545,72 +335,68 @@ namespace RobotCafe.Devices
             bool write = this.SendMultipleWriteRegister(Start_reg_address, reg_count, valueList.ToArray());
             if (write != true)
             {
-                return 1;
+                Logger.LogError("WriteMultipleRegisterTogether bool write= false");
+                return -1;
             }
 
-            int checkCounter = 0;
-            while (this.state == State.CommandSent)
+
+
+            ResponseTimer.Enabled = true;
+
+            while (true)
             {
-                checkCounter++;
-                await Task.Delay(100);
-                if (checkCounter > 30)
+                if (this.state == State.CommandACKReceived)
                 {
+                    ret = 0; //success
                     break;
                 }
+                else if (this.state == State.TimeOut)
+                {
+                    Logger.LogError("WriteMultipleRegisterTogether this.state == State.CommandSent TimeOut oluştu SlaveAdd: " + this.slaveAddress);
+                    ret = 1;
+                    break;
+                }
+
+                Thread.Sleep(10);
             }
 
-
-            if (this.state == State.CommandACKReceived)
-            {
-                ret = 0; //success
-            }
-            else if (this.state == State.CommandSent)
-            {
-                ret = 1;
-            }
-            else
-            {
-
-            }
 
             return ret;
         }
 
 
-        protected async Task<int> ReadAllRegisters()
+        protected int ReadAllRegisters()
         {
             int ret = 1;
-            int checkCounter = 0;
 
             bool read = this.SendMultipleReadRegister(RegisterReadList.First().Register_Address, (ushort)(RegisterReadList.Last().Register_Address - RegisterReadList.First().Register_Address + 1), (RegisterReadList.Count * 2 + 5));
             if (read != true)
             {
-                return 1;
+                return -1;
             }
+            
 
-            while (this.state == State.StatusSent)
+
+
+            ResponseTimer.Enabled = true;
+
+            while (true)
             {
-                checkCounter++;
-                await Task.Delay(20);
-                if (checkCounter > 30)
+                if (this.state == State.StatusResponseReceived)
                 {
+                    ret = 0; //success
                     break;
                 }
+                else if (this.state == State.TimeOut)
+                {
+                    Logger.LogError("ReadAllRegisters this.state == State.CommandSent TimeOut oluştu SlaveAdd: " + this.slaveAddress);
+                    ret = 1;
+                    break;
+                }
+
+                Thread.Sleep(10);
             }
 
-
-            if (this.state == State.StatusResponseReceived)
-            {
-                ret = 0; //success
-            }
-            else if (this.state == State.StatusSent)
-            {
-                ret = 1;
-            }
-            else
-            {
-
-            }
 
             return ret;
         }
@@ -618,6 +404,13 @@ namespace RobotCafe.Devices
 
         public void Update(RTUResponsePacket packet)
         {
+            ResponseTimer.Enabled = false;
+            if (packet == null)
+            {
+                Logger.LogError("RTU Device state= Timeout geldi................ slaveAdd: "+slaveAddress);
+                this.state = State.TimeOut;
+                return;
+            }
             this.HandleResponse(packet);
         }
 
@@ -646,7 +439,6 @@ namespace RobotCafe.Devices
         private void HandleCommandACK()
         {
             this.state = State.CommandACKReceived;
-
         }
 
 
@@ -667,36 +459,27 @@ namespace RobotCafe.Devices
 
 
 
-
-        //private void SendReceiveMultipleWriteRegister(ushort Start_Reg_Address, ushort registerCount, short[] values)
-        //{
-
-        //    byte[] data = BuildWriteMultipleRegisterMsg(this.slaveAddress, FunctionCode.FC16, Start_Reg_Address, registerCount, values);
-
-        //    this.state = State.CommandSent;
-        //    this.serialManager.SendReceive(data, 8, maxResponseWaitTime);
-
-        //}
-
-
-        //private void SendReceiveMultipleReadRegister(ushort Start_Reg_Address, ushort registerCount, int receiveSize)
-        //{
-
-        //    byte[] data = BuildReadMultipleRegisterMsg(this.slaveAddress, FunctionCode.FC3, Start_Reg_Address, registerCount);
-        //    this.state = State.StatusSent;
-        //    this.serialManager.SendReceive(data, receiveSize, maxResponseWaitTime);
-
-        //}
-
-
-
         private bool SendMultipleWriteRegister(ushort Start_Reg_Address, ushort registerCount, short[] values)
         {
 
             byte[] data = BuildWriteMultipleRegisterMsg(this.slaveAddress, FunctionCode.FC16, Start_Reg_Address, registerCount, values);
 
             this.state = State.CommandSent;
-            return this.serialManager.SendReq(data, 8);
+            TXRXData tXRXData = new TXRXData();
+            tXRXData.data = data;
+            tXRXData.receiveSize = 8;
+            tXRXData.SlaveAddress = this.slaveAddress;
+
+            //if(this.serialManager.portName.Equals("COM2") && this.slaveAddress == 2)
+            //{
+            //    for(int i=0;i<tXRXData.data.Length; i++)
+            //    {
+            //        Logger.Error("kiskac data: " + tXRXData.data[i]);
+            //    }
+
+            //}
+
+            return this.serialManager.SendReq(tXRXData);
 
         }
 
@@ -706,13 +489,17 @@ namespace RobotCafe.Devices
 
             byte[] data = BuildReadMultipleRegisterMsg(this.slaveAddress, FunctionCode.FC3, Start_Reg_Address, registerCount);
             this.state = State.StatusSent;
-            return this.serialManager.SendReq(data, receiveSize);
+            TXRXData tXRXData = new TXRXData();
+            tXRXData.data = data;
+            tXRXData.receiveSize = receiveSize;
+            tXRXData.SlaveAddress = this.slaveAddress;
+            return this.serialManager.SendReq(tXRXData);
 
         }
 
 
 
-        private static byte[] BuildWriteMultipleRegisterMsg(byte slaveAddress, byte function, ushort startAddress, ushort registerCount, short[] values)
+        private byte[] BuildWriteMultipleRegisterMsg(byte slaveAddress, byte function, ushort startAddress, ushort registerCount, short[] values)
         {
             byte[] frame = new byte[9 + 2 * registerCount];
             frame[0] = slaveAddress;                        // Slave address
@@ -733,7 +520,7 @@ namespace RobotCafe.Devices
             return frame;
         }
 
-        private static byte[] BuildReadMultipleRegisterMsg(byte slaveAddress, byte function, ushort startAddress, ushort registerCount)
+        private byte[] BuildReadMultipleRegisterMsg(byte slaveAddress, byte function, ushort startAddress, ushort registerCount)
         {
             byte[] frame = new byte[8];
             frame[0] = slaveAddress;                        // Slave address
@@ -748,7 +535,7 @@ namespace RobotCafe.Devices
             return frame;
         }
 
-        private static byte[] CalculateCRC(byte[] data)
+        private byte[] CalculateCRC(byte[] data)
         {
             ushort CRCFull = 0xFFFF;
             char CRCLSB;

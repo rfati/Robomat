@@ -31,10 +31,6 @@ namespace RobotCafe.Devices
             this.ProbServo_Asagi_Pos = robomatConfig.Isitici_ProbServo_Asagi_Pos;
 
             this.slaveAddress = 0x25;
-            //this.maxResponseWaitTime = 500;
-            //this.stateChangeTime = 3;
-            //this.MAX_TRY_COUNTER = 20;
-            this.NextReadDelay = 0;
             this.isitici = new Isitici();
 
 
@@ -47,139 +43,68 @@ namespace RobotCafe.Devices
         }
 
 
-        public async Task<int> SetPositionTask(int ret, short? yikamaPos, short? vakumPos, short? probPos)
+        public int SetPositionTask(int ret, short? probPos)
         {
             if (ret != 0)
                 return 1;
-            ret = await SetPosition(ret, yikamaPos, vakumPos, probPos);
-            return await IsPositionOK(ret, yikamaPos, vakumPos, probPos);
+            ret = SetPosition(ret, probPos);
+            ret = IsPositionOK(ret, probPos);
+
+
+            if (ret != 0)
+            {
+                Logger.LogError("Isıtıcı ünitesi SetPositionTask Error.");
+            }
+
+            return ret;
         }
 
-        public async Task<int> SetPosition(int ret, short? yikamaPos, short? vakumPos, short? probPos)
+        public int SetPosition(int ret, short? probPos)
         {
             if (ret != 0)
                 return 1;
             List<Motor> motorList = new List<Motor>();
-            if (yikamaPos != null)
-            {
-                this.isitici.Isitici_YikamaStep.TargetPosRegisterWrite.Register_Target_Value = (short)yikamaPos;
-                motorList.Add(this.isitici.Isitici_YikamaStep);
-            }
-            if (vakumPos != null)
-            {
-                this.isitici.Isitici_VakumServo.TargetPosRegisterWrite.Register_Target_Value = (short)vakumPos;
-                motorList.Add(this.isitici.Isitici_VakumServo);
-            }
+            
             if (probPos != null)
             {
                 this.isitici.Isitici_ProbServo.TargetPosRegisterWrite.Register_Target_Value = (short)probPos;
                 motorList.Add(this.isitici.Isitici_ProbServo);
             }
 
-            return await SetMotorPosition(motorList);
+            ret =  SetMotorPosition(motorList);
+            if (ret != 0)
+            {
+                Logger.LogError("Isıtıcı ünitesi SetPosition Error.");
+            }
+
+            return ret;
         }
 
-        public async Task<int> IsPositionOK(int ret, short? yikamaPos, short? vakumPos, short? probPos)
+        public int IsPositionOK(int ret, short? probPos)
         {
             if (ret != 0)
                 return 1;
             List<Motor> motorList = new List<Motor>();
-            if (yikamaPos != null)
-            {
-                this.isitici.Isitici_YikamaStep.TargetPosRegisterWrite.Register_Target_Value = (short)yikamaPos;
-                motorList.Add(this.isitici.Isitici_YikamaStep);
-            }
-            if (vakumPos != null)
-            {
-                this.isitici.Isitici_VakumServo.TargetPosRegisterWrite.Register_Target_Value = (short)vakumPos;
-                motorList.Add(this.isitici.Isitici_VakumServo);
-            }
+           
             if (probPos != null)
             {
                 this.isitici.Isitici_ProbServo.TargetPosRegisterWrite.Register_Target_Value = (short)probPos;
                 motorList.Add(this.isitici.Isitici_ProbServo);
             }
 
-            return await IsMotorPositionOK(motorList);
+            ret = IsMotorPositionOK(motorList);
+            if (ret != 0)
+            {
+                Logger.LogError("Isıtıcı ünitesi IsPositionOK Error.");
+            }
+
+            return ret;
         }
 
 
 
-        public async Task<int> VakumServoPosAyarla(short Pos)
-        {
-            List<Motor> motorList = new List<Motor>();
-            MotorCommandResult retMotor = null;
 
-            this.isitici.Isitici_VakumServo.TargetPosRegisterWrite.Register_Target_Value = Pos;
-            motorList.Add(this.isitici.Isitici_VakumServo);
-            retMotor = await WriteReadMultipleMotor(motorList);
-            if (!retMotor.IsSuccess())
-            {
-                return 1;
-            }
-
-            return 0;
-        }
-
-        public async Task<int> ProbServoPosAyarla(short Pos)
-        {
-            List<Motor> motorList = new List<Motor>();
-            MotorCommandResult retMotor = null;
-
-            this.isitici.Isitici_ProbServo.TargetPosRegisterWrite.Register_Target_Value = Pos;
-            motorList.Add(this.isitici.Isitici_ProbServo);
-            retMotor = await WriteReadMultipleMotor(motorList);
-            if (!retMotor.IsSuccess())
-            {
-                return 1;
-            }
-
-            return 0;
-        }
-
-        public async Task<int> YikamaStepPosAyarla(short Pos)
-        {
-            List<Motor> motorList = new List<Motor>();
-            MotorCommandResult retMotor = null;
-
-            this.isitici.Isitici_YikamaStep.TargetPosRegisterWrite.Register_Target_Value = Pos;
-            motorList.Add(this.isitici.Isitici_YikamaStep);
-            retMotor = await WriteReadMultipleMotor(motorList);
-            if (!retMotor.IsSuccess())
-            {
-                return 1;
-            }
-
-            return 0;
-        }
-
-        public async Task<int> RunIsiticiBuhar(int run)
-        {
-            List<Relay> relayList = new List<Relay>();
-            relayList.Clear();
-            this.isitici.Isitici_Buhar.TargetPosRegisterWrite.Register_Target_Value = ((short)run);
-            relayList.Add(this.isitici.Isitici_Buhar);
-            RelayCommandResult retRelay = await WriteMultipleRelay(relayList);
-            if (!retRelay.IsSuccess())
-            {
-                return 1;
-            }
-
-            //await Task.Delay(RunTimeDuration);
-
-            //relayList.Clear();
-            //this.isitici.Isitici_Buhar.TargetPosRegisterWrite.Register_Target_Value = 0;
-            //relayList.Add(this.isitici.Isitici_Buhar);
-            //retRelay = await WriteMultipleRelay(relayList);
-            if (!retRelay.IsSuccess())
-            {
-                return 1;
-            }
-
-            return 0;
-        }
-
-        public async Task<int> RunIsiticiBuhar(int ret, bool run)
+        public int RunIsiticiBuhar(int ret, bool run)
         {
             if (ret != 0)
                 return 1;
@@ -196,9 +121,10 @@ namespace RobotCafe.Devices
             }
 
             relayList.Add(this.isitici.Isitici_Buhar);
-            RelayCommandResult retRelay = await WriteMultipleRelay(relayList);
+            RelayCommandResult retRelay = WriteMultipleRelay(relayList);
             if (!retRelay.IsSuccess())
             {
+                Logger.LogError("Isıtıcı ünitesi RunIsiticiBuhar Error.");
                 return 1;
             }
 
@@ -206,7 +132,7 @@ namespace RobotCafe.Devices
         }
 
 
-        public async Task<int> RunIsiticiONOFF(bool run)
+        public int RunIsiticiONOFF(int ret, bool run)
         {
             List<Relay> relayList = new List<Relay>();
             relayList.Clear();
@@ -222,9 +148,10 @@ namespace RobotCafe.Devices
             }
 
             relayList.Add(this.isitici.Isitici_ONOFF);
-            RelayCommandResult retRelay = await WriteMultipleRelay(relayList);
+            RelayCommandResult retRelay = WriteMultipleRelay(relayList);
             if (!retRelay.IsSuccess())
             {
+                Logger.LogError("Isıtıcı ünitesi RunIsiticiONOFF Error.");
                 return 1;
             }
 
@@ -232,8 +159,10 @@ namespace RobotCafe.Devices
             return 0;
         }
 
-        public async Task<int> RunIsiticiProbeBuharONOFF(bool run)
+        public int RunIsiticiProbeBuharONOFF(int ret,bool run)
         {
+            if (ret != 0)
+                return 1;
             List<Relay> relayList = new List<Relay>();
             relayList.Clear();
 
@@ -247,16 +176,17 @@ namespace RobotCafe.Devices
             }
 
             relayList.Add(this.isitici.Isitici_Probe_Buhar);
-            RelayCommandResult retRelay = await WriteMultipleRelay(relayList);
+            RelayCommandResult retRelay = WriteMultipleRelay(relayList);
             if (!retRelay.IsSuccess())
             {
+                Logger.LogError("Isıtıcı ünitesi RunIsiticiProbeBuharONOFF Error.");
                 return 1;
             }
 
             return 0;
         }
 
-        public async Task<int> RunIsiticiYikamaBuharONOFF(bool run)
+        public int RunIsiticiYikamaBuharONOFF(int ret, bool run)
         {
             List<Relay> relayList = new List<Relay>();
             relayList.Clear();
@@ -273,9 +203,10 @@ namespace RobotCafe.Devices
             }
 
             relayList.Add(this.isitici.Isitici_Yikama_Buhar);
-            RelayCommandResult retRelay = await WriteMultipleRelay(relayList);
+            RelayCommandResult retRelay = WriteMultipleRelay(relayList);
             if (!retRelay.IsSuccess())
             {
+                Logger.LogError("Isıtıcı ünitesi RunIsiticiYikamaBuharONOFF Error.");
                 return 1;
             }
 
