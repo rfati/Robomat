@@ -111,7 +111,7 @@ namespace RobotCafe.Service
             bool is_hazir_kaseKapak_ok = false;
 
 
-            ret = await cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret,95,15,5,5,35);
+            ret = await cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret,95,45,15,20,35);
             if (ret != 0)
                 return 1;
 
@@ -149,7 +149,7 @@ namespace RobotCafe.Service
             {
                 for (int i = 0; i < 1; i++)
                 {
-                    KapYerlestirTaskRet = await this.DoKaseHazirlamaTest(kaseNo: 2);
+                    KapYerlestirTaskRet = await this.DoKaseHazirlamaTest(kaseNo: 0);
                     if (KapYerlestirTaskRet != 0)
                         return -1;
                     kapInfo = this.cafeKapUnite.GetKapSensorInfo();
@@ -234,31 +234,30 @@ namespace RobotCafe.Service
             int ret = 0;
             List<float[]> positionList = new List<float[]>();
 
-            ret = await this.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 100, 150, 15, 15, 35);
+            ret = await this.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 100, 150, 10, 15, 35);
 
             float[] pos1 = { 0, -98.2f, -32.3f, 40.8f, -91.8f, 0 }; // home position
-            float[] posara = { 55.5f, 54.7f, -43.1f, -95.9f, -91.8f, 0 };
+            float[] posara = { 51.5f, 54.7f, -43.1f, -95.9f, -91.8f, 0 };
 
 
-            float[] pos3 = { 53.2f, 1.7f, 6f, -62.5f, -93.5f, 0 };
+            float[] pos3 = { 49.2f, 1.7f, 6f, -62.5f, -93.5f, 0 };
 
-            float[] pos4 = { 63.4f, 61f, -68.1f, -83.4f, -91.8f, 0 };
-            float[] kapakalma1 = { 63.4f, 53.8f, -63.2f, -81.4f, -91.8f, 0 }; //kapak alma pos 1
-            float[] kapakalma2 = { 63.4f, 51.8f, -62.9f, -81f, -91.8f, 0 }; //kapak alma pos 2
-            float[] posrevize = { 51.1f, 44.1f, -40.6f, -93.6f, 93f, 0 }; //kapak alma pos 2
+            float[] pos4 = { 59f, 61.7f, -68.4f, -83.9f, -91.8f, 0 };
+            float[] kapakalma1 = { 59f, 52.9f, -62.4f, -81.2f, -91.8f, 0 }; //kapak alma pos 1
+            float[] kapakalma2 = { 59.4f, 51.8f, -62.9f, -81f, -91.8f, 0 }; //kapak alma pos 2
+            float[] posrevize = { 47.1f, 44.1f, -40.6f, -93.6f, 93f, 0 }; //kapak alma pos 2
 
 
 
             positionList.Clear();
             positionList.Add(pos1);
-            //positionList.Add(pos1x);
-
-            //positionList.Add(pos2);
             positionList.Add(pos3);
             positionList.Add(posara);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10, wait: false);
 
+            positionList.Clear();
             positionList.Add(pos4);
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
 
             positionList.Clear();
             if (tryCounter == 0)
@@ -270,7 +269,7 @@ namespace RobotCafe.Service
                 positionList.Add(kapakalma2);
             }
 
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
             ret = await this.vakumUnite.RunRobotTutucuVakum(ret, run: true);
 
             await Task.Delay(1000);
@@ -279,46 +278,37 @@ namespace RobotCafe.Service
             positionList.Add(pos4);
             positionList.Add(posara);
 
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 15);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
 
-
-            float[] pos31 = { 53.2f, 39f, -17.8f, -96f, 93f, 0 };
-
-            float[] pos311 = { 58.4f, 62.7f, -85.5f, -66.9f, 88.7f, 0 };
-
-            float[] pos32 = { 58.4f, 65f, -87.5f, -66.8f, 88.7f, 0 };
-
-
+            float[] pos31 = { 49.2f, 39f, -17.8f, -96f, 92.1f, 0 };
+            float[] pos311 = { 53.7f, 61.5f, -84.6f, -69.2f, 92.1f, 0 };
+            float[] pos32 = { 53.7f, 65f, -87.1f, -69.2f, 92.1f, 0 };
 
             positionList.Clear();
             positionList.Add(pos3);
-
-
-
             positionList.Add(pos31);
             positionList.Add(posrevize);
-
             positionList.Add(pos311);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10, wait: false);
 
+            positionList.Clear();
             positionList.Add(pos32);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
 
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 25);
             ret = await this.vakumUnite.RunRobotTutucuVakum(ret, run: false);
 
             await Task.Delay(1000);
 
-
             positionList.Clear();
             positionList.Add(pos311);
             positionList.Add(pos31);
-
-            // positionList.Add(posrevize);
-
             positionList.Add(pos3);
-            //positionList.Add(pos2);
-            positionList.Add(pos1);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10, wait: false);
 
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 40);
+            positionList.Clear();
+            positionList.Add(pos1);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
+
             ret = await this.vakumUnite.RunRobotTutucuVakum(ret, run: false);
 
             return ret;
@@ -329,13 +319,13 @@ namespace RobotCafe.Service
             int ret = 0;
             List<float[]> positionList = new List<float[]>();
 
-            ret = await this.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 99, 150, 15, 15, 35);
+            ret = await this.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 99, 150, 10, 15, 35);
 
 
             float[] pos1 = { 0, -98.2f, -32.3f, 40.8f, -91.8f, 0 }; // home position
             float[] pos2 = { 0, 1.2f, 1.1f, -91.6f, -91.8f, 0 };
-            float[] pos3 = { 131.7f, 1.2f, 1.1f, -91.6f, -91.8f, 0 };
-            float[] pos40 = { 134.3f, 67.8f, -63f, -96.5f, -91.8f, 0 };
+            float[] pos3 = { 127.7f, 1.2f, 1.1f, -91.6f, -91.8f, 0 };
+            float[] pos40 = { 130.3f, 67.8f, -63f, -96.5f, -91.8f, 0 };
 
 
             positionList.Clear();
@@ -346,86 +336,77 @@ namespace RobotCafe.Service
 
             if (kaseNo == 0)
             {
-                float[] pos4 = { 147.6f, 78.2f, -89.4f, -81.6f, -91.8f, 0 };
-                float[] pos5 = { 147.6f, 55.4f, -69.7f, -77.5f, -91.8f, 0 };
+                float[] pos4 = { 143.8f, 78f, -84f, -80.3f, -89.7f, 0 };
+                float[] pos5 = { 143.8f, 52.5f, -66f, -74.7f, -89.7f, 0 };
 
                 positionList.Add(pos4);
                 positionList.Add(pos5);
             }
             else if (kaseNo == 1)
             {
-                float[] pos4 = { 134.1f, 81.1f, -98.8f, -72.2f, -91.8f, 0 };
-                float[] pos5 = { 134.1f, 56.1f, -74.9f, -70.2f, -91.8f, 0 };
+                float[] pos4 = { 130.5f, 81.3f, -94.2f, -74.1f, -89.7f, 0 };
+                float[] pos5 = { 130.5f, 58.1f, -77.6f, -70.7f, -89.7f, 0 };
                 positionList.Add(pos4);
                 positionList.Add(pos5);
             }
             else if (kaseNo == 2)
             {
-                float[] pos4 = { 121f, 81.6f, -100.2f, -72.8f, -91.8f, 0 };
-                float[] pos5 = { 121f, 56.8f, -76.9f, -69f, -91.8f, 0 };
+                float[] pos4 = { 117f, 82.3f, -96.3f, -73f, -89.7f, 0 };
+                float[] pos5 = { 117.1f, 59.2f, -79.9f, -70.3f, -89.7f, 0 };
                 positionList.Add(pos4);
                 positionList.Add(pos5);
             }
 
 
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 40);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
             ret = await this.vakumUnite.RunRobotTutucuVakum(ret, run: true);
 
             await Task.Delay(1000);
 
-            float[] pos6 = { 0, -98.2f, -32.3f, 40.8f, 88.5f, 0 };
-
-            float[] pos6x = { 46.5f, 6.1f, -120.5f, 25.3f, 88.5f, 0 };//yaklaşma
-            float[] pos7 = { 46.5f, 2.7f, -112.9f, 19.8f, 88.5f, 0 };//kase bırakma
+            float[] pos6 = { 0, -98.2f, -32.3f, 40.8f, 93.7f, 0 };
+            float[] pos6x = { 42.2f, 4.7f, -122.1f, 26.4f, 93.7f, 0 };//yaklaşma
+            float[] pos7 = { 42.2f, 0.5f, -111.4f, 19.1f, 93.7f, 0 };//kase bırakma
 
 
             positionList.Clear();
 
             if (kaseNo == 0)
             {
-                float[] pos4 = { 147.6f, 78.2f, -89.4f, -81.6f, -91.8f, 0 };
-
-
-
-
+                float[] pos4 = { 143.8f, 78f, -84f, -80.3f, -89.7f, 0 };
                 positionList.Add(pos4);
 
             }
             else if (kaseNo == 1)
             {
-                float[] pos4 = { 134.1f, 81.1f, -98.8f, -72.2f, -91.8f, 0 };
-
-
-
+                float[] pos4 = { 130.5f, 81.3f, -94.2f, -74.1f, -89.7f, 0 };
                 positionList.Add(pos4);
 
             }
             else if (kaseNo == 2)
             {
-                float[] pos4 = { 121f, 81.6f, -100.2f, -72.8f, -91.8f, 0 };
-
-
-
+                float[] pos4 = { 117f, 82.3f, -96.3f, -73f, -89.7f, 0 };
                 positionList.Add(pos4);
 
             }
 
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 20);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 50);
 
             positionList.Clear();
             positionList.Add(pos40);
             positionList.Add(pos3);
             positionList.Add(pos2);
-            //positionList.Add(pos1);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 50, wait: false);
+
+            positionList.Clear();
             positionList.Add(pos6);
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 50);
 
             positionList.Clear();
             positionList.Add(pos6x);
             positionList.Add(pos7);
 
 
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 50);
             ret = await this.vakumUnite.RunRobotTutucuVakum(ret, run: false);
 
             await Task.Delay(1000);
@@ -434,8 +415,7 @@ namespace RobotCafe.Service
             positionList.Add(pos6x);
             positionList.Add(pos6);
             positionList.Add(pos1);
-
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 25);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
 
             return ret;
         }
@@ -446,87 +426,87 @@ namespace RobotCafe.Service
 
             List<float[]> positionList = new List<float[]>();
 
-            ret = await this.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 100, 150, 15, 15, 35);
+            ret = await this.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 100, 150, 10, 15, 35);
 
 
             float[] pos1 = { 0, -98.2f, -32.3f, 40.8f, -91.8f, 0 }; // home position
-            float[] pos2 = { 93.1f, -45.6f, 9.9f, -48.7f, -91.8f, 0 };
-            float[] pos3 = { 91.9f, 45.7f, -9.6f, -90f, -91.8f, 0 };
-            float[] posara = { 46.3f, -54.2f, -17.3f, -19.9f, 90.6f, 0 };
+            float[] pos2 = { 91f, -45.6f, 9.9f, -48.7f, -91.8f, 0 };
+            float[] pos3 = { 91f, 50.9f, -10.7f, -84.9f, -91.8f, 0 };
+            float[] posara = { 42.3f, -54.2f, -17.3f, -19.9f, 90.6f, 0 };
+            float[] poscart = { 91f, 61.9f, -55.3f, -91.9f, -91.8f, 0 };
+
 
 
             positionList.Clear();
             positionList.Add(pos1);
-            //positionList.Add(pos2);
             positionList.Add(pos2);
             positionList.Add(pos3);
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
+
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 70, wait: false);
+
 
             if (bardakNo == 0)
             {
-                float[] pos4 = { 106.5f, 91.2f, -90.2f, -84.9f, -91.8f, 0 };
-                float[] pos5 = { 106.5f, 52.6f, -62.5f, -79.7f, -92.5f, 0 };
+                float[] pos4 = { 102.1f, 76.7f, -79.7f, -87.8f, -91.8f, 0 };
+                float[] pos5 = { 102.1f, 53.1f, -62.4f, -81f, -91.8f, 0 };
                 positionList.Clear();
                 positionList.Add(pos4);
                 positionList.Add(pos5);
             }
             else if (bardakNo == 1)
             {
-                float[] pos4 = { 93.2f, 75.5f, -75f, -90.8f, -91.8f, 0 };
-
-                float[] pos5 = { 93f, 50.2f, -54.5f, -85.5f, -92.5f, 0 };//bardak alma
+                float[] pos4 = { 89.2f, 94.5f, -93.8f, -89.8f, -91.8f, 0 };
+                float[] pos5 = { 89.2f, 49.6f, -53.7f, -84.6f, -91.8f, 0 };//bardak alma
                 positionList.Clear();
                 positionList.Add(pos4);
                 positionList.Add(pos5);
             }
             else if (bardakNo == 2)
             {
-                float[] pos4 = { 75.3f, 60.4f, -65f, -85.7f, -91.8f, 0 };
-                float[] pos5 = { 75.6f, 53.5f, -60.9f, -82.3f, -91.8f, 0 };//bardak alma
+                float[] pos4 = { 74.1f, 57.5f, -57f, -89.4f, -91.8f, 0 };
+                float[] pos5 = { 75.1f, 49.9f, -53.8f, -86.3f, -91.8f, 0 };//bardak alma
                 positionList.Clear();
                 positionList.Add(pos4);
                 positionList.Add(pos5);
             }
 
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 50);
 
-
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
             ret = await this.vakumUnite.RunRobotTutucuVakum(ret, run: true);
 
             await Task.Delay(1000);
 
-            float[] pos60 = { 46.3f, -54.2f, -22.2f, -14f, 90.6f, 0 };
-            float[] pos6 = { 46.7f, -6.7f, -54.2f, -28.9f, 90.6f, 0 };
-            float[] pos7 = { 46.7f, -5.5f, -52.2f, -34.3f, 90.6f, 0 }; //bırakma noktası
+            float[] pos60 = { 42.7f, -54.2f, -22.2f, -14f, 92.4f, 0 };
+            float[] pos6 = { 42.7f, -8f, -53.9f, -27.9f, 92.4f, 0 };
+
+            //float[] pos7 = { 42.7f, -7.4f, -50.6f, -34.5f, 92.4f, 0 }; //bırakma noktası
+            float[] pos7 = { 42.7f, -6.8f, -50.1f, -34.4f, 92.4f, 0 }; //bırakma noktası
 
 
             positionList.Clear();
             if (bardakNo == 0)
             {
                 //float[] pos4 = { 102.8f, 97f, -106f, -77.8f, -91.4f, 0 };
-                float[] pos4 = { 106.5f, 91.2f, -90.2f, -84.9f, -91.8f, 0 };
-
-
+                float[] pos4 = { 102.1f, 76.7f, -79.7f, -87.8f, -91.8f, 0 };
                 positionList.Add(pos4);
             }
             else if (bardakNo == 1)
             {
 
-                float[] pos4 = { 93.2f, 75.5f, -75f, -90.8f, -91.8f, 0 };
-
-                float[] pos4x = { 93.2f, 57.5f, -16.8f, -87.7f, -91.8f, 0 };
+                float[] pos4 = { 89.2f, 94.5f, -93.8f, -89.8f, -91.8f, 0 };
+                float[] pos4x = { 89.2f, 57.5f, -16.8f, -87.7f, -91.8f, 0 };
 
                 positionList.Add(pos4);
-                positionList.Add(pos4x);
+                //positionList.Add(pos4x);
 
             }
             else if (bardakNo == 2)
             {
 
-                float[] pos4 = { 74.4f, 68f, -71.9f, -87f, -91.8f, 0 };
-                float[] pos4x = { 79.9f, 67.3f, -69.4f, -88.5f, -78.9f, 0 };
-                float[] pos4x1 = { 83.4f, 73.9f, -70f, -85.2f, -74f, 0 };
-                float[] pos4x2 = { 90.4f, 50.2f, -11.4f, -90.1f, -74f, 0 };
+                float[] pos4 = { 74.6f, 56.7f, -55.9f, -89.2f, -91.8f, 0 };
+                float[] pos4x = { 77.4f, 57.4f, -54.9f, -88f, -84.4f, 0 };
+                float[] pos4x1 = { 80f, 59.9f, -54.9f, -88f, -79.2f, 0 };
+                float[] pos4x2 = { 84.6f, 67.9f, -54.8f, -88f, -68f, 0 };
 
                 positionList.Add(pos4);
                 positionList.Add(pos4x);
@@ -537,7 +517,7 @@ namespace RobotCafe.Service
             }
 
             ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
-            float[] posyeni = { 34.6f, -95.7f, 0, -0.3f, 88.5f, 0 };
+            float[] posyeni = { 30.6f, -95.7f, 0, -0.3f, 88.5f, 0 };
 
 
 
@@ -545,21 +525,16 @@ namespace RobotCafe.Service
             positionList.Clear();
             positionList.Add(pos3);
             positionList.Add(pos2);
-            //positionList.Add(pos2); //refactor
-            //positionList.Add(pos1);
             positionList.Add(posyeni);
-
-            //positionList.Add(pos60);
             positionList.Add(posara);
-
             positionList.Add(pos6);
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 60, wait: false);
 
             positionList.Clear();
             positionList.Add(pos7); // bardak bırakma noktası
 
 
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 70);
 
             ret = await this.vakumUnite.RunRobotTutucuVakum(ret, run: false);
 
@@ -567,13 +542,14 @@ namespace RobotCafe.Service
 
             positionList.Clear();
             positionList.Add(pos6);
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 5);
 
             positionList.Clear();
             positionList.Add(pos60);
             positionList.Add(pos1);
 
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 30);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 70);
+
 
             return ret;
         }
@@ -582,23 +558,26 @@ namespace RobotCafe.Service
             int ret = 0;
             List<float[]> positionList = new List<float[]>();
 
-            ret = await this.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 95, 150, 15, 15, 35);
+            ret = await this.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 95, 150, 10, 15, 35);
 
             float[] pos1 = { 0, -98.2f, -32.3f, 40.8f, -91.8f, 0 }; // home position
             float[] pos2 = { 0, 1.2f, 1.1f, -91.6f, -91.8f, 0 };
             float[] pos3 = { 131.7f, 1.2f, 1.1f, -91.6f, -91.8f, 0 };
             float[] pos4 = { 134.3f, 67.8f, -63f, -96.5f, -91.8f, 0 };
-            float[] pos5 = { 162.6f, 64.4f, -63.2f, -90.4f, -92.5f, 0 };// kase kapak yaklaşma
+            float[] pos5 = { 158.4f, 53.1f, -55.1f, -84.6f, -92.5f, 0 };// kase kapak yaklaşma
 
             positionList.Clear();
             positionList.Add(pos1);
             positionList.Add(pos2);
             positionList.Add(pos3);
             positionList.Add(pos4);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10, wait: false);
+
+            positionList.Clear();
             positionList.Add(pos5);
             ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
 
-            float[] pos6 = { 162.6f, 49f, -54.1f, -84.9f, -92.5f, 0 };//kapak alma noktası
+            float[] pos6 = { 158.4f, 49.3f, -55f, -84.6f, -92.9f, 0 };//kapak alma noktası
 
 
             positionList.Clear();
@@ -610,26 +589,29 @@ namespace RobotCafe.Service
 
             positionList.Clear();
             positionList.Add(pos5);
-            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 3);
+
+            float[] pos31 = { 131.7f, 1.2f, 1.1f, -91.6f, -91.8f, 0 };
+            float[] pos32 = { 66.4f, 1.2f, 1.1f, -91.6f, 89.5f, 0 };
+            float[] pos33 = { 66.4f, 16.7f, -2.2f, -78.9f, 89.5f, 0 };
+            float[] pos33x = { 66.4f, 54.4f, -63.9f, -82.6f, 89.9f, 0 };
+
+            float[] pos34 = { 66.4f, 60.6f, -68.6f, -84.6f, 89.9f, 0 };//kapak bırakma noktası
 
             positionList.Clear();
             positionList.Add(pos4);
             positionList.Add(pos3);
-            float[] pos31 = { 131.7f, 1.2f, 1.1f, -91.6f, -91.8f, 0 };
-            float[] pos32 = { 71f, 1.2f, 1.1f, -91.6f, 88.5f, 0 };
-            float[] pos33 = { 71f, 16.7f, -2.2f, -78.9f, 88.5f, 0 };
-            float[] pos33x = { 71f, 55.6f, -65.6f, -80.2f, 86.4f, 0 };
-
-            float[] pos34 = { 71f, 61.1f, -69.8f, -80.4f, 86.4f, 0 };//kapak bırakma noktası
-
             positionList.Add(pos31);
             positionList.Add(pos32);
             positionList.Add(pos33);
             positionList.Add(pos33x);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10, wait: false);
+
+            positionList.Clear();
             positionList.Add(pos34);
-
-
             ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
+
+
             ret = await this.vakumUnite.RunRobotTutucuVakum(ret, run: false);
 
             await Task.Delay(1000);
@@ -640,9 +622,12 @@ namespace RobotCafe.Service
             positionList.Add(pos33);
             positionList.Add(pos32);
             positionList.Add(pos2);
-            positionList.Add(pos1);
+            ret = await this.robotArm.SetPosition(ret, positionList, speed: 10, wait: false);
 
+            positionList.Clear();
+            positionList.Add(pos1);
             ret = await this.robotArm.SetPosition(ret, positionList, speed: 10);
+
             ret = await this.vakumUnite.RunRobotTutucuVakum(ret, run: false);
 
             return ret;

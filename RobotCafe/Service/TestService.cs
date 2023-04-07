@@ -663,7 +663,7 @@ namespace RobotCafe.Service
             positionList.Add(deneme);
             positionList.Add(tekrar);
 
-            ret = await this.robotCafeUnite.robotArm.SetPosition(ret, positionList, speed: 60);
+            ret = await this.robotCafeUnite.robotArm.SetPosition(ret, positionList, speed: 10);
 
             await Task.Delay(500);
             ret = await this.robotCafeUnite.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 70, 15, 2, 2, 118);
@@ -672,7 +672,7 @@ namespace RobotCafe.Service
             positionList.Clear();
             positionList.Add(pose4);
             positionList.Add(pose5);
-            ret = await this.robotCafeUnite.robotArm.SetPosition(ret, positionList, speed: 60);
+            ret = await this.robotCafeUnite.robotArm.SetPosition(ret, positionList, speed: 10);
 
             float[] vakumtut = { -48.9f, -113.2f, -6.1f, -39.6f, -91.8f, 0 };
 
@@ -681,7 +681,7 @@ namespace RobotCafe.Service
             positionList.Clear();
             positionList.Add(vakumtut);
 
-            ret = await this.robotCafeUnite.robotArm.SetPosition(ret, positionList, speed: 90);
+            ret = await this.robotCafeUnite.robotArm.SetPosition(ret, positionList, speed: 10);
             ret = await this.robotCafeUnite.vakumUnite.RunIsiticiVakum(ret, run: true);
 
             ret = await this.robotCafeUnite.cafeRobotTutucuKiskacUnite.WriteAllKiskac(ret, 70, 15, 30, 30, 118);
@@ -889,7 +889,7 @@ namespace RobotCafe.Service
             positionList.Add(pos4x);
             ret = await this.robotCafeUnite.robotArm.SetPosition(ret, positionList, speed: 35);
 
-            
+
 
             positionList.Clear();
             positionList.Add(posisitmayaklasma1);
@@ -1726,8 +1726,6 @@ namespace RobotCafe.Service
             ret = await this.otomatUnite.otomatUrunAlmaUnite.SetPositionTask(ret, 4, 45, 30, 8, 80, 50, isTogether: true);
 
 
-
-
             ret = await this.otomatUnite.otomatAsansorUnite.SetPositionTask(ret: ret, yatayPos: null, dikeyPos: AtmaNoktasıDikeyPos);
             if (ret != 0)
                 return 1;
@@ -1742,7 +1740,7 @@ namespace RobotCafe.Service
 
             ret = await this.otomatUnite.otomatUrunAlmaUnite.SetPositionTask(ret, 4, 120, 120, 82, 80, 50, isTogether: true);
 
-          
+
 
             return ret;
         }
