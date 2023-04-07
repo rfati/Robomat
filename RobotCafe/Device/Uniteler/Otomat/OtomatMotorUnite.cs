@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace RobotCafe.Devices
@@ -19,21 +18,21 @@ namespace RobotCafe.Devices
             this.slaveAddress = slaveAddress;
         }
 
-        public int RunMotor(ushort Register_Address, int RunTimeDuration)
+        public async Task<int> RunMotor(ushort Register_Address, int RunTimeDuration)
         {
-            var motorRunResult = this.ActuateMotor(Register_Address, Run: true);
-            if (motorRunResult != 0)
+            var motorRunTask = Task.Run(() => this.ActuateMotor(Register_Address, Run: true));
+            motorRunTask.Wait();
+            if (motorRunTask.Result != 0)
             {
-                Logger.LogError("Otomat Motor Run:True Error.");
                 return 1;
             }
 
-            Thread.Sleep(RunTimeDuration);
+            await Task.Delay(RunTimeDuration);
 
-            var motorStopResult = this.ActuateMotor(Register_Address, Run: false);
-            if (motorStopResult != 0)
+            var motorStopTask = Task.Run(() => this.ActuateMotor(Register_Address, Run: false));
+            motorStopTask.Wait();
+            if (motorStopTask.Result != 0)
             {
-                Logger.LogError("Otomat Motor Run:False Error.");
                 return 1;
             }
 
@@ -41,7 +40,7 @@ namespace RobotCafe.Devices
 
         }
 
-        private int ActuateMotor(ushort Register_Address, bool Run)
+        private async Task<int> ActuateMotor(ushort Register_Address, bool Run)
         {
             RegisterWrite registerWrite;
             if (Run == true)
@@ -55,7 +54,7 @@ namespace RobotCafe.Devices
             List<RegisterWrite> RegisterWriteList = new List<RegisterWrite>();
             RegisterWriteList.Add(registerWrite);
 
-            int ret = this.WriteMultipleRegister(RegisterWriteList);
+            int ret = await this.WriteMultipleRegister(RegisterWriteList);
             if (ret != 0)
             {
                 Logger.LogError("OtomatMotorUnite--> ActuateMotor(ushort Register_Address, bool Run)- Register_Address: " + Register_Address.ToString() + "Run: " + Run.ToString() + "return: " + ret.ToString());

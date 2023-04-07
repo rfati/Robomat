@@ -48,27 +48,24 @@ namespace RobotCafe
         public SerialManager OtomatUniteSerialManager;
         public bool isOtomatUniteCOMConnected = false;
 
-        //public SerialManager kiskacUniteSerialManager;
-        //public bool isKiskacUniteCOMConnected = false;
+        public SerialManager kiskacUniteSerialManager;
+        public bool isKiskacUniteCOMConnected = false;
 
         private OtomatUnite otomatUnite;
         private RobotCafeUnite robotCafeUnite;
 
         public SaleService saleService;
+        public TestService testService;
         public HomingService homingService;
 
         private IXArmPath hotServiceXArmPath;
         private IXArmPath coldServiceXArmPath;
         private IXArmPath packageServiceXArmPath;
         private GetReadyToServiceXArmPath getReadyToServiceXArmPath;
-
-
         private RobomatConfig robomatConfig;
 
 
         public bool IsHomingOK = false;
-
-        public bool IsReadyToSaleService = false;
 
 
 
@@ -96,7 +93,6 @@ namespace RobotCafe
                 this.isiticiUnite = new CafeIsiticiUnite(this.robomatConfig);
                 this.cafeKapUnite = new CafeKapUnite();
                 this.vakumUnite = new CafeVakumUnite();
-                this.cafeRobotTutucuKiskacUnite = new CafeRobotTutucuKiskacUnite();
 
                 this.cafeUniteSerialManager = new SerialManager(portName: this.robomatConfig.cafeUniteSerialManager_port);
                 this.isCafeUniteCOMConnected = this.cafeUniteSerialManager.Open();
@@ -112,12 +108,11 @@ namespace RobotCafe
                     this.isiticiUnite.Attach(this.cafeUniteSerialManager);
                     this.cafeKapUnite.Attach(this.cafeUniteSerialManager);
                     this.vakumUnite.Attach(this.cafeUniteSerialManager);
-                    this.cafeRobotTutucuKiskacUnite.Attach(this.cafeUniteSerialManager);
                 }
 
 
 
-                this.otomatMotorUniteList = new List<OtomatMotorUnite>();
+                this.otomatMotorUniteList = new List<OtomatMotorUnite> ();
                 this.otomatMotorUniteList.Add(new OtomatMotorUnite(slaveAddress: 0x11));
                 this.otomatMotorUniteList.Add(new OtomatMotorUnite(slaveAddress: 0x12));
                 this.otomatMotorUniteList.Add(new OtomatMotorUnite(slaveAddress: 0x13));
@@ -135,7 +130,7 @@ namespace RobotCafe
                 {
                     this.OtomatUniteSerialManager.OnDeviceDisconnected += OtomatUniteSM_OnCOMDisconnected;
                     this.OtomatUniteSerialManager.OnDeviceConnected += OtomatUniteSM_OnCOMConnected;
-                    foreach (var item in this.otomatMotorUniteList)
+                    foreach(var item in this.otomatMotorUniteList)
                     {
                         item.Attach(this.OtomatUniteSerialManager);
                     }
@@ -146,22 +141,21 @@ namespace RobotCafe
 
 
 
-                //this.cafeRobotTutucuKiskacUnite = new CafeRobotTutucuKiskacUnite();
-                //this.kiskacUniteSerialManager = new SerialManager(portName: this.robomatConfig.cafeRobotTutucuKiskacUniteSerialManager_port);
-                //this.isKiskacUniteCOMConnected = this.kiskacUniteSerialManager.Open();
-                //if (this.isKiskacUniteCOMConnected)
-                //{
-                //    this.kiskacUniteSerialManager.OnDeviceDisconnected += KiskacUnite_OnDeviceDisconnected;
-                //    this.kiskacUniteSerialManager.OnDeviceConnected += KiskacUnite_OnDeviceConnected;
+                this.cafeRobotTutucuKiskacUnite = new CafeRobotTutucuKiskacUnite();
+                this.kiskacUniteSerialManager = new SerialManager(portName: this.robomatConfig.cafeRobotTutucuKiskacUniteSerialManager_port);
+                this.isKiskacUniteCOMConnected = this.kiskacUniteSerialManager.Open();
+                if (this.isKiskacUniteCOMConnected)
+                {
+                    this.kiskacUniteSerialManager.OnDeviceDisconnected += KiskacUnite_OnDeviceDisconnected;
+                    this.kiskacUniteSerialManager.OnDeviceConnected += KiskacUnite_OnDeviceConnected;
 
-                //    this.cafeRobotTutucuKiskacUnite.Attach(this.kiskacUniteSerialManager);
-                //}
+                    this.cafeRobotTutucuKiskacUnite.Attach(this.kiskacUniteSerialManager);
+                }
 
 
 
                 this.robotArm = new RobotArm();
                 this.isRobotArmConnected = this.robotArm.Connect(this.robomatConfig.XArm_Ip);
-                Logger.LogInfo("xarm_ip: " + this.robomatConfig.XArm_Ip);
                 if (this.isRobotArmConnected)
                 {
                     this.robotArm.xArmController.OnDeviceDisconnected += RobotArm_OnDeviceDisconnected;
@@ -169,30 +163,18 @@ namespace RobotCafe
                 }
 
                 this.otomatUnite = new OtomatUnite(this.otomatMotorUniteList, this.otomatAsansorUnite, this.otomatUrunAlmaUnite);
-                this.robotCafeUnite = new RobotCafeUnite(this.asansorUnite, this.kesiciUnite, this.kapakKapatmaUnite, this.isiticiUnite, this.urunAlmaUnite, this.vakumUnite, this.cafeKapUnite, this.cafeRobotTutucuKiskacUnite, this.robotArm, this.getReadyToServiceXArmPath);
+                this.robotCafeUnite = new RobotCafeUnite(this.asansorUnite, this.kesiciUnite,this.kapakKapatmaUnite, this.isiticiUnite, this.urunAlmaUnite, this.vakumUnite, this.cafeKapUnite, this.cafeRobotTutucuKiskacUnite, this.robotArm, this.getReadyToServiceXArmPath);
 
 
 
                 this.saleService = new SaleService(this.otomatUnite, this.robotCafeUnite);
+                this.testService = new TestService(this.otomatUnite, this.robotCafeUnite);
                 this.homingService = new HomingService(this.otomatUnite, this.robotCafeUnite);
 
 
 
 
-                //if (this.isOtomatUniteCOMConnected && this.isCafeUniteCOMConnected && isKiskacUniteCOMConnected && isRobotArmConnected)
-                //{
-                //    this.IsRunning = true;
-                //    Logger.LogInfo("RobotCafeController---> Start().. IsRunning = TRUE");
-                //}
-                //else
-                //{
-                //    this.IsRunning = false;
-                //    Logger.LogError("RobotCafeController---> Start() Is NOT Running properly..  isCafeUniteConnected: " + isCafeUniteCOMConnected.ToString() + " isKiskacUniteConnected: " + isKiskacUniteCOMConnected.ToString() + " isRobotArmConnected: " + isRobotArmConnected.ToString() + " isCafeOtomatUniteConnected: " + isOtomatUniteCOMConnected.ToString());
-                //}
-
-
-
-                if (this.isOtomatUniteCOMConnected && this.isCafeUniteCOMConnected && isRobotArmConnected)
+                if (this.isOtomatUniteCOMConnected && this.isCafeUniteCOMConnected && isKiskacUniteCOMConnected && isRobotArmConnected)
                 {
                     this.IsRunning = true;
                     Logger.LogInfo("RobotCafeController---> Start().. IsRunning = TRUE");
@@ -200,7 +182,7 @@ namespace RobotCafe
                 else
                 {
                     this.IsRunning = false;
-                    Logger.LogError("RobotCafeController---> Start() Is NOT Running properly..  isCafeUniteConnected: " + isCafeUniteCOMConnected.ToString() + " isRobotArmConnected: " + isRobotArmConnected.ToString() + " isCafeOtomatUniteConnected: " + isOtomatUniteCOMConnected.ToString());
+                    Logger.LogError("RobotCafeController---> Start() Is NOT Running properly..  isCafeUniteConnected: " + isCafeUniteCOMConnected.ToString() + " isKiskacUniteConnected: " + isKiskacUniteCOMConnected.ToString() + " isRobotArmConnected: " + isRobotArmConnected.ToString() + " isCafeOtomatUniteConnected: " + isOtomatUniteCOMConnected.ToString());
                 }
 
             }
@@ -223,16 +205,16 @@ namespace RobotCafe
             this.IsRunning = false;
         }
 
-        //private void KiskacUnite_OnDeviceConnected(string SerialPortName)
-        //{
-        //    this.isKiskacUniteCOMConnected = true;
-        //}
+        private void KiskacUnite_OnDeviceConnected(string SerialPortName)
+        {
+            this.isKiskacUniteCOMConnected = true;
+        }
 
-        //private void KiskacUnite_OnDeviceDisconnected(string SerialPortName)
-        //{
-        //    this.isKiskacUniteCOMConnected = false;
-        //    this.IsRunning = false;
-        //}
+        private void KiskacUnite_OnDeviceDisconnected(string SerialPortName)
+        {
+            this.isKiskacUniteCOMConnected = false;
+            this.IsRunning = false;
+        }
 
         private void CafeUniteSM_OnCOMConnected(string SerialPortName)
         {
@@ -271,7 +253,6 @@ namespace RobotCafe
                 this.isiticiUnite.Detach();
                 this.cafeKapUnite.Detach();
                 this.vakumUnite.Detach();
-                this.cafeRobotTutucuKiskacUnite.Detach();
 
                 this.cafeUniteSerialManager.OnDeviceDisconnected -= CafeUniteSM_OnCOMDisconnected;
                 this.cafeUniteSerialManager.OnDeviceConnected -= CafeUniteSM_OnCOMConnected;
@@ -291,7 +272,6 @@ namespace RobotCafe
                     this.isiticiUnite.Attach(this.cafeUniteSerialManager);
                     this.cafeKapUnite.Attach(this.cafeUniteSerialManager);
                     this.vakumUnite.Attach(this.cafeUniteSerialManager);
-                    this.cafeRobotTutucuKiskacUnite.Attach(this.cafeUniteSerialManager);
                 }
             }
 
@@ -327,29 +307,29 @@ namespace RobotCafe
                 }
             }
 
-            //if (this.isKiskacUniteCOMConnected == false)
-            //{
-            //    Logger.LogInfo("RobotCafeController.KiskacUnite--->Restart() --Trying...");
+            if (this.isKiskacUniteCOMConnected == false)
+            {
+                Logger.LogInfo("RobotCafeController.KiskacUnite--->Restart() --Trying...");
 
-            //    this.cafeRobotTutucuKiskacUnite.Detach();
+                this.cafeRobotTutucuKiskacUnite.Detach();
 
-            //    this.kiskacUniteSerialManager.OnDeviceDisconnected -= KiskacUnite_OnDeviceDisconnected;
-            //    this.kiskacUniteSerialManager.OnDeviceConnected -= KiskacUnite_OnDeviceConnected;
+                this.kiskacUniteSerialManager.OnDeviceDisconnected -= KiskacUnite_OnDeviceDisconnected;
+                this.kiskacUniteSerialManager.OnDeviceConnected -= KiskacUnite_OnDeviceConnected;
 
-            //    this.kiskacUniteSerialManager.Dispose();
-            //    this.isKiskacUniteCOMConnected = this.kiskacUniteSerialManager.Open();
+                this.kiskacUniteSerialManager.Dispose();
+                this.isKiskacUniteCOMConnected = this.kiskacUniteSerialManager.Open();
 
-            //    if (this.isKiskacUniteCOMConnected)
-            //    {
-            //        this.kiskacUniteSerialManager.OnDeviceDisconnected += KiskacUnite_OnDeviceDisconnected;
-            //        this.kiskacUniteSerialManager.OnDeviceConnected += KiskacUnite_OnDeviceConnected;
+                if (this.isKiskacUniteCOMConnected)
+                {
+                    this.kiskacUniteSerialManager.OnDeviceDisconnected += KiskacUnite_OnDeviceDisconnected;
+                    this.kiskacUniteSerialManager.OnDeviceConnected += KiskacUnite_OnDeviceConnected;
 
-            //        this.cafeRobotTutucuKiskacUnite.Attach(this.kiskacUniteSerialManager);
+                    this.cafeRobotTutucuKiskacUnite.Attach(this.kiskacUniteSerialManager);
 
-            //    }
-            //}
+                }
+            }
 
-            if (this.isRobotArmConnected == false)
+            if(this.isRobotArmConnected == false)
             {
                 Logger.LogInfo("RobotCafeController.RobotArm--->Restart() --Trying...");
 
@@ -367,31 +347,41 @@ namespace RobotCafe
                 }
             }
 
-            //if (this.isCafeUniteCOMConnected && this.isOtomatUniteCOMConnected && isKiskacUniteCOMConnected && this.isRobotArmConnected)
-            //{
-            //    this.IsRunning = true;
-            //}
-
-            if (this.isCafeUniteCOMConnected && this.isOtomatUniteCOMConnected && this.isRobotArmConnected)
+            if (this.isCafeUniteCOMConnected && this.isOtomatUniteCOMConnected && isKiskacUniteCOMConnected && this.isRobotArmConnected)
             {
                 this.IsRunning = true;
             }
+
         }
 
 
+        public int DoServiceCommandTest(CartItemMessage cartItem, Product product)
+        {
+            int ret = 1;
+
+            saleService.SetServiceMethod(new HotServiceMethod(HotServiceType.Sicak, this.hotServiceXArmPath));
+            ret = saleService.DoService(product);
+            if (ret != 0)
+                return 1;
+            ret = saleService.GetReady();
+
+            return ret;
+
+        }
         public int DoServiceCommand(CartItemMessage cartItem, Product product)
         {
             int ret = 1;
 
+            this.IsHomingOK = true;
+
             if (this.IsHomingOK == false)
             {
-                Logger.LogError("DoServiceCommand not starting .... this.IsHomingOK = false");
                 return ret;
             }
 
-            Logger.LogInfo("DoServiceCommand starting ....");
+            
 
-            for (int i = 0; i < cartItem.Quantity; i++)
+            for(int i=0; i<cartItem.Quantity; i++)
             {
                 if (cartItem.serviceType == ServiceType.Hot)
                 {
@@ -401,14 +391,15 @@ namespace RobotCafe
                         ret = saleService.DoService(product);
                         if (ret != 0)
                             break;
+                        ret = saleService.GetReady();
                     }
                     else
                     {
-                        Logger.LogInfo("DoServiceCommand HotServiceMethod starting ....");
                         saleService.SetServiceMethod(new HotServiceMethod(cartItem.hotServiceType, this.hotServiceXArmPath));
                         ret = saleService.DoService(product);
                         if (ret != 0)
                             break;
+                        ret = saleService.GetReady();
                     }
 
                 }
@@ -418,6 +409,7 @@ namespace RobotCafe
                     ret = saleService.DoService(product);
                     if (ret != 0)
                         break;
+                    ret = saleService.GetReady();
                 }
                 else if (cartItem.serviceType == ServiceType.Package)
                 {
@@ -425,21 +417,13 @@ namespace RobotCafe
                     ret = saleService.DoService(product);
                     if (ret != 0)
                         break;
+                    ret = saleService.GetReady();
                 }
 
                 if (ret != 0)
                     break;
 
 
-            }
-
-            if (ret == 0)
-            {
-                this.IsReadyToSaleService = true;
-            }
-            else
-            {
-                this.IsReadyToSaleService = false;
             }
 
             return ret;
@@ -452,11 +436,12 @@ namespace RobotCafe
             int ret = -1;
             try
             {
-                this.homingService.DoHoming();
-                ret = this.homingService.HomingResult;
+                var homingTask = Task.Run(() => this.homingService.DoHoming());
+                homingTask.Wait();
+                ret = homingTask.Result;
 
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 Logger.LogError("DoHoming process exception: " + e.Message);
             }
@@ -480,8 +465,10 @@ namespace RobotCafe
             int ret = -1;
             try
             {
-                this.homingService.GetReadyToService();
-                ret = this.homingService.GetReadyToServiceResult;
+                var homingTask = Task.Run(() => this.homingService.GetReadyToService());
+                homingTask.Wait();
+                ret = homingTask.Result;
+
             }
             catch (Exception e)
             {
@@ -491,17 +478,16 @@ namespace RobotCafe
             if (ret == 0)
             {
                 Logger.LogInfo("DoHoming process OK.");
-                this.IsReadyToSaleService = true;
+                this.IsHomingOK = true;
             }
             else
             {
                 Logger.LogError("DoHoming process NOK!!!");
-                this.IsReadyToSaleService = false;
+                this.IsHomingOK = false;
             }
             return ret;
 
         }
-
 
     }
 }

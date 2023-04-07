@@ -27,6 +27,10 @@ namespace RobotCafe.Devices
             this.Dikey_Kase_Pos = robomatConfig.KapakKapatma_Dikey_Kase_Pos;
 
             this.slaveAddress = 0x22;
+            //this.maxResponseWaitTime = 500;
+            //this.stateChangeTime = 3;
+            //this.MAX_TRY_COUNTER = 20;
+            this.NextReadDelay = 0;
 
             this.kapakKapatma = new KapakKapatma();
 
@@ -44,24 +48,17 @@ namespace RobotCafe.Devices
 
         }
 
-        public int SetPositionTask(int ret, short? yatayPos, short? dikeyPos)
+        public async Task<int> SetPositionTask(int ret, short? yatayPos, short? dikeyPos)
         {
             if (ret != 0)
                 return 1;
 
-            ret = SetPosition(ret, yatayPos, dikeyPos);
-            ret = IsPositionOK(ret, yatayPos, dikeyPos);
-
-            if (ret != 0)
-            {
-                Logger.LogError("Kapak Kapatma ünitesi SetPositionTask Error.");
-            }
-
-            return ret;
+            ret = await SetPosition(ret, yatayPos, dikeyPos);
+            return await IsPositionOK(ret, yatayPos, dikeyPos);
 
         }
 
-        public int SetPosition(int ret, short? yatayPos, short? dikeyPos)
+        public async Task<int> SetPosition(int ret, short? yatayPos, short? dikeyPos)
         {
             if (ret != 0)
                 return 1;
@@ -77,16 +74,10 @@ namespace RobotCafe.Devices
                 motorList.Add(this.kapakKapatma.KapakKapatma_Dikey);
             }
 
-            ret = SetMotorPosition(motorList);
-            if (ret != 0)
-            {
-                Logger.LogError("Kapak Kapatma ünitesi SetPosition Error.");
-            }
-
-            return ret;
+            return await SetMotorPosition(motorList);
         }
 
-        public int IsPositionOK(int ret, short? yatayPos, short? dikeyPos)
+        public async Task<int> IsPositionOK(int ret, short? yatayPos, short? dikeyPos)
         {
             if (ret != 0)
                 return 1;
@@ -102,15 +93,44 @@ namespace RobotCafe.Devices
                 motorList.Add(this.kapakKapatma.KapakKapatma_Dikey);
             }
 
-            ret = IsMotorPositionOK(motorList);
-            if (ret != 0)
-            {
-                Logger.LogError("Kapak Kapatma ünitesi IsPositionOK Error.");
-            }
-
-            return ret;
+            return await IsMotorPositionOK(motorList);
         }
 
+
+
+
+
+        public async Task<int> YatayPosAyarla(short Pos)
+        {
+            List<Motor> motorList = new List<Motor>();
+            MotorCommandResult retMotor = null;
+
+            this.kapakKapatma.KapakKapatma_Yatay.TargetPosRegisterWrite.Register_Target_Value = Pos;
+            motorList.Add(this.kapakKapatma.KapakKapatma_Yatay);
+            retMotor = await WriteReadMultipleMotor(motorList);
+            if (!retMotor.IsSuccess())
+            {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        public async Task<int> DikeyPosAyarla(short Pos)
+        {
+            List<Motor> motorList = new List<Motor>();
+            MotorCommandResult retMotor = null;
+
+            this.kapakKapatma.KapakKapatma_Dikey.TargetPosRegisterWrite.Register_Target_Value = Pos;
+            motorList.Add(this.kapakKapatma.KapakKapatma_Dikey);
+            retMotor = await WriteReadMultipleMotor(motorList);
+            if (!retMotor.IsSuccess())
+            {
+                return 1;
+            }
+
+            return 0;
+        }
 
 
 

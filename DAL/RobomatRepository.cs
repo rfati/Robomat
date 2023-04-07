@@ -60,7 +60,6 @@ namespace DAL
         {
             _dbSet.Attach(entityToUpdate);
             _context.Entry(entityToUpdate).State = EntityState.Modified;
-            _context.SaveChanges();
         }
         public virtual void Delete(object EntityId)
         {

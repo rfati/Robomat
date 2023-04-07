@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Common;
 using RobotCafe.xarm;
-using System.Threading;
 
 namespace RobotCafe.Service
 {
@@ -14,14 +13,6 @@ namespace RobotCafe.Service
     {
         private OtomatUnite otomatUnite;
         private RobotCafeUnite robotCafeUnite;
-        private int OtomatHomingResult;
-        private int CafeHomingResult;
-        private int OtomatReadyResult;
-        private int CafeReadyResult;
-
-        public int HomingResult = 1;
-        public int GetReadyToServiceResult = 1;
-
         public HomingService(OtomatUnite otomatUnite, RobotCafeUnite robotCafeUnite)
         {
             this.otomatUnite = otomatUnite;
@@ -29,68 +20,70 @@ namespace RobotCafe.Service
         }
 
 
-        public void DoHoming()
+        public async Task<int> DoHoming()
         {
+            List<Task<int>> paralelTasks = new List<Task<int>>();
 
+            paralelTasks.Add(otomatUnite.DoHoming());
+            paralelTasks.Add(robotCafeUnite.DoHoming());
 
-            Thread t1 = new Thread(new ThreadStart(DoOtomatHoming));
-            Thread t2 = new Thread(new ThreadStart(DoCafeHoming));
-            t1.Start();
-            t2.Start();
-
-            t1.Join();
-            t2.Join();
-
-            if (OtomatHomingResult == 0 && CafeHomingResult == 0)
+            int ret = await this.RunAsyncParalelTasks(paralelTasks);
+            if (ret != 0)
             {
-                HomingResult = 0;
+                return 1;
             }
-            else
+            paralelTasks.Clear();
+            paralelTasks = null;
+
+
+            return 0;
+
+        }
+
+        public async Task<int> GetReadyToService()
+        {
+            List<Task<int>> paralelTasks = new List<Task<int>>();
+
+            paralelTasks.Add(otomatUnite.GetHomingReadyToService());
+            paralelTasks.Add(robotCafeUnite.GetReadyToService(ret: 0));
+
+            int ret = await this.RunAsyncParalelTasks(paralelTasks);
+            if (ret != 0)
             {
-                HomingResult = 1;
+                return 1;
             }
+            paralelTasks.Clear();
+            paralelTasks = null;
+
+            return 0;
 
         }
 
-        public void GetReadyToService()
+        private async Task<int> RunAsyncParalelTasks(List<Task<int>> paralelTasks)
         {
-            Thread t1 = new Thread(new ThreadStart(DoOtomatReadyToService));
-            Thread t2 = new Thread(new ThreadStart(DoCafeReadyToService));
-            t1.Start();
-            t2.Start();
-
-            t1.Join();
-            t2.Join();
-
-            if (OtomatReadyResult == 0 && CafeReadyResult == 0)
+            int ret = -1;
+            int taskCounter = paralelTasks.Count;
+            while (taskCounter > 0)
             {
-                GetReadyToServiceResult = 0;
+                Task<int> finishedTask = await Task.WhenAny(paralelTasks);
+                taskCounter--;
+                paralelTasks.Remove(finishedTask);
             }
-            else
+            foreach (var task in paralelTasks)
             {
-                GetReadyToServiceResult = 1;
+                if (task.Result == 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    return -1;
+                }
             }
 
-        }
+            ret = 0;
+            return ret;
 
-        private void DoOtomatHoming()
-        {
-            OtomatHomingResult = otomatUnite.DoHoming();
-        }
-
-        private void DoCafeHoming()
-        {
-            CafeHomingResult = robotCafeUnite.DoHoming();
-        }
-
-        private void DoOtomatReadyToService()
-        {
-            OtomatReadyResult = otomatUnite.GetHomingReadyToService();
-        }
-
-        private void DoCafeReadyToService()
-        {
-            CafeReadyResult = robotCafeUnite.GetReadyToService();
         }
     }
 }

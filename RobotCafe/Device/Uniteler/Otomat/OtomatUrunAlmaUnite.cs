@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace RobotCafe.Devices
@@ -16,6 +15,7 @@ namespace RobotCafe.Devices
         public OtomatUrunAlmaUnite()
         {
             this.slaveAddress = 0x02;
+            this.stateChangeTime = 2;
 
             ushort lastReg = 19;
             for (ushort regaddress = 7; regaddress <= lastReg; regaddress++)
@@ -27,32 +27,25 @@ namespace RobotCafe.Devices
             this.urunAlma = new OtomatUrunAlma();
         }
 
-        public int SetPositionTask(int ret, short? donmePos, short? kiskac1Pos, short? kiskac2Pos, short? tekmePos, short? pantiltPos, short? ileriGeriPos)
+        public async Task<int> SetPositionTask(int ret, short? donmePos, short? kiskac1Pos, short? kiskac2Pos, short? tekmePos, short? pantiltPos, short? ileriGeriPos, bool isTogether = false)
         {
             if (ret != 0)
                 return 1;
 
-
-            ret =   SetPosition(donmePos, kiskac1Pos, kiskac2Pos, tekmePos, pantiltPos, ileriGeriPos);
+            ret = await SetPosition(donmePos, kiskac1Pos, kiskac2Pos, tekmePos, pantiltPos, ileriGeriPos, isTogether:isTogether);
             if (ret != 0)
                 return 1;
             
-            ret =   IsPositionOK(donmePos, kiskac1Pos, kiskac2Pos, tekmePos, pantiltPos, ileriGeriPos);
-
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Ürün Alma ünitesi SetPositionTask Error.");
-            }
-
+            ret = await IsPositionOK(donmePos, kiskac1Pos, kiskac2Pos, tekmePos, pantiltPos, ileriGeriPos);
+            
             return ret;
-
         }
 
         
 
-        public int SetPosition(short? donmePos, short? kiskac1Pos, short? kiskac2Pos, short? tekmePos, short? pantiltPos, short? ileriGeriPos)
+        public async Task<int> SetPosition(short? donmePos, short? kiskac1Pos, short? kiskac2Pos, short? tekmePos, short? pantiltPos, short? ileriGeriPos, int msReadDelay=1000, bool isTogether = false)
         {
-            bool isTogether = false;
+
             List<Motor> motorList = new List<Motor>();
 
             if(donmePos != null)
@@ -88,22 +81,11 @@ namespace RobotCafe.Devices
 
             }
 
-            if(donmePos != null && kiskac1Pos != null && kiskac2Pos != null && tekmePos != null && pantiltPos != null && ileriGeriPos != null)
-            {
-                isTogether = true;
-            }
-
-            int ret =   SetMotorPosition(motorList, isTogether: isTogether);
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Ürün Alma ünitesi SetPosition Error.");
-            }
-
-            return ret;
+            return await SetMotorPosition(motorList, isTogether: isTogether);
         }
 
 
-        public int IsPositionOK(short? donmePos, short? kiskac1Pos, short? kiskac2Pos, short? tekmePos, short? pantiltPos, short? ileriGeriPos)
+        public async Task<int> IsPositionOK(short? donmePos, short? kiskac1Pos, short? kiskac2Pos, short? tekmePos, short? pantiltPos, short? ileriGeriPos)
         {
 
             List<Motor> motorList = new List<Motor>();
@@ -113,7 +95,7 @@ namespace RobotCafe.Devices
                 this.urunAlma.Donme.TargetPosRegisterWrite.Register_Target_Value = (short)donmePos;
                 motorList.Add(this.urunAlma.Donme);
 
-                //Thread.Sleep(2000);
+                //await Task.Delay(2000);
             }
             if (kiskac1Pos != null)
             {
@@ -142,24 +124,19 @@ namespace RobotCafe.Devices
 
             }
 
-            int ret =   IsMotorPositionOK(motorList);
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Ürün Alma ünitesi IsMotorPositionOK Error.");
-            }
-
-            return ret;
+            return await IsMotorPositionOK(motorList);
         }
 
 
-        public int DoHoming()
+        public async Task<int> DoHoming()
         {
             int ret = 0;
 
-            ret =   this.SetPositionTask(ret, null, null, null, 3, null, null);
-            ret =   this.SetPositionTask(ret, null, 40, 40, null, null, 80);
-            ret =   this.SetPositionTask(ret, null, null, null, null, 15, null);
-            ret =   this.SetPositionTask(ret, 0, null, null, null, null, null);
+            ret = await this.SetPositionTask(ret, null, 45, 45, null, null, null);
+            ret = await this.SetPositionTask(ret, null, null, null, 14, 30, null);
+            ret = await this.SetPositionTask(ret, 0, null, null, null, null, null);
+            await Task.Delay(100);
+            ret = await this.SetPositionTask(ret, 55, null, null, null, null, null);
 
             return ret;
             
@@ -171,11 +148,11 @@ namespace RobotCafe.Devices
         public bool UrunAlindimi()
         {
             int isSet = -1;
-            var sensorOkuResult = SensorOku();
-
-            if (sensorOkuResult != null)
+            var sensorOkuTask = Task.Run(() => SensorOku());
+            sensorOkuTask.Wait();
+            if (sensorOkuTask.Result != null)
             {
-                int sensorValue = sensorOkuResult.CurrentValRegisterRead.Register_Read_Value;
+                int sensorValue = sensorOkuTask.Result.CurrentValRegisterRead.Register_Read_Value;
                 isSet = sensorValue & (0x0001);
                 if (isSet == 1)
                     return true;
@@ -189,13 +166,13 @@ namespace RobotCafe.Devices
 
         }
 
-        private Sensor SensorOku()
+        private async Task<Sensor> SensorOku()
         {
             List<Sensor> sensorList = new List<Sensor>();
             sensorList.Clear();
             sensorList.Add(this.urunAlma.urunAlmaSensor);
 
-            SensorCommandResult ret = ReadMultipleSensor(sensorList);
+            SensorCommandResult ret = await ReadMultipleSensor(sensorList);
             if (!ret.IsSuccess())
             {
                 return null;

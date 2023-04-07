@@ -27,6 +27,10 @@ namespace RobotCafe.Devices
 
             this.kesici = new Kesici();
             this.slaveAddress = 0x21;
+            //this.maxResponseWaitTime = 500;
+            //this.stateChangeTime = 3;
+            //this.MAX_TRY_COUNTER = 20;
+            this.NextReadDelay = 0;
 
             for (ushort regaddress = this.kesici.FirstReadAddress; regaddress <= this.kesici.LastReadAddress; regaddress++)
             {
@@ -38,27 +42,20 @@ namespace RobotCafe.Devices
 
         }
 
-        public int SetPositionTask(int ret, short? lineerPos, short? servoPos)
+        public async Task<int> SetPositionTask(int ret, short? lineerPos, short? servoPos)
         {
             if (ret != 0)
                 return 1;
 
-            ret = SetPosition(ret, lineerPos, servoPos);
-            ret = IsPositionOK(ret, lineerPos, servoPos);
-
-            if (ret != 0)
-            {
-                Logger.LogError("Kesici ünitesi SetPositionTask Error.");
-            }
-
-            return ret;
+            ret = await SetPosition(ret, lineerPos, servoPos);
+            return await IsPositionOK(ret, lineerPos, servoPos);
 
 
         }
 
 
 
-        public int SetPosition(int ret,short? lineerPos, short? servoPos)
+        public async Task<int> SetPosition(int ret,short? lineerPos, short? servoPos)
         {
             if (ret != 0)
                 return 1;
@@ -74,16 +71,10 @@ namespace RobotCafe.Devices
                 motorList.Add(this.kesici.Kesici_Servo);
             }
 
-            ret = SetMotorPosition(motorList);
-            if (ret != 0)
-            {
-                Logger.LogError("Kesici ünitesi SetPosition Error.");
-            }
-
-            return ret;
+            return await SetMotorPosition(motorList);
         }
 
-        public int IsPositionOK(int ret, short? lineerPos, short? servoPos)
+        public async Task<int> IsPositionOK(int ret, short? lineerPos, short? servoPos)
         {
             if (ret != 0)
                 return 1;
@@ -99,13 +90,42 @@ namespace RobotCafe.Devices
                 motorList.Add(this.kesici.Kesici_Servo);
             }
 
-            ret = IsMotorPositionOK(motorList);
-            if (ret != 0)
+            return await IsMotorPositionOK(motorList);
+        }
+
+
+        
+
+        public async Task<int> SikistirmaLineerPosAyarla(short Pos)
+        {
+            List<Motor> motorList = new List<Motor>();
+            MotorCommandResult retMotor = null;
+
+            this.kesici.Kesici_Lineer.TargetPosRegisterWrite.Register_Target_Value = Pos;
+            motorList.Add(this.kesici.Kesici_Lineer);
+            retMotor = await WriteReadMultipleMotor(motorList);
+            if (!retMotor.IsSuccess())
             {
-                Logger.LogError("Kesici ünitesi IsPositionOK Error.");
+                return 1;
             }
 
-            return ret;
+            return 0;
+        }
+
+        public async Task<int> BicakServoPosAyarla(short Pos)
+        {
+            List<Motor> motorList = new List<Motor>();
+            MotorCommandResult retMotor = null;
+
+            this.kesici.Kesici_Servo.TargetPosRegisterWrite.Register_Target_Value = Pos;
+            motorList.Add(this.kesici.Kesici_Servo);
+            retMotor = await WriteReadMultipleMotor(motorList);
+            if (!retMotor.IsSuccess())
+            {
+                return 1;
+            }
+
+            return 0;
         }
 
 

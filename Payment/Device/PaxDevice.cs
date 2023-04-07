@@ -331,7 +331,7 @@ namespace Payment.Device
 
             while (this.state == PaxState.Satis_Istek_Sent)
             {
-                Thread.Sleep(10);
+                await Task.Delay(10);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -346,7 +346,7 @@ namespace Payment.Device
             }
             while (this.state == PaxState.Satis_Istek_Isleme_Alindi)
             {
-                Thread.Sleep(10);
+                await Task.Delay(10);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -362,7 +362,7 @@ namespace Payment.Device
             }
             while (this.state == PaxState.Durum_Bilgilendirme_Alindi)
             {
-                Thread.Sleep(10);
+                await Task.Delay(10);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -381,7 +381,7 @@ namespace Payment.Device
             else if (this.state == PaxState.Satis_Islem_Basarili)
             {
                 this.SendACKCommand();
-                Thread.Sleep(2000);
+                await Task.Delay(2000);
                 ret = await this.SendSatisKaydetIstekCommand();
             }
 
@@ -400,7 +400,7 @@ namespace Payment.Device
 
             while (this.state == PaxState.Satis_Kaydet_Sent)
             {
-                Thread.Sleep(50);
+                await Task.Delay(50);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -414,7 +414,7 @@ namespace Payment.Device
                 this.StartResponseTimeoutTimer(ms: 2000);
                 while (this.state == PaxState.Satis_Kaydet_Isleme_Alindi)
                 {
-                    Thread.Sleep(10);
+                    await Task.Delay(10);
                 }
                 if (this.state == PaxState.TimeOut)
                 {
@@ -439,7 +439,7 @@ namespace Payment.Device
                 }
                 while (this.state == PaxState.Satis_Kaydet_Basarili || this.state == PaxState.Satis_Kaydet_Basarisiz)
                 {
-                    Thread.Sleep(50);
+                    await Task.Delay(50);
                 }
                 if (this.state == PaxState.TimeOut)
                 {
@@ -468,7 +468,7 @@ namespace Payment.Device
             }
             while (this.state == PaxState.Satis_Kaydet_Basarili || this.state == PaxState.Satis_Kaydet_Basarisiz)
             {
-                Thread.Sleep(150);
+                await Task.Delay(150);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -495,7 +495,7 @@ namespace Payment.Device
             }
             while (this.state == PaxState.GunSonu_Baslatildi)
             {
-                Thread.Sleep(10);
+                await Task.Delay(10);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -518,7 +518,7 @@ namespace Payment.Device
             }
             while (this.state == PaxState.GunSonu_Basarili || this.state == PaxState.GunSonu_Basarisiz)
             {
-                Thread.Sleep(10);
+                await Task.Delay(10);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -545,7 +545,7 @@ namespace Payment.Device
 
             while (this.state == PaxState.Iptal_Istek_Sent)
             {
-                Thread.Sleep(10);
+                await Task.Delay(10);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -560,7 +560,7 @@ namespace Payment.Device
             }
             while (this.state == PaxState.Iptal_Istek_Isleme_Alindi)
             {
-                Thread.Sleep(10);
+                await Task.Delay(10);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -577,7 +577,7 @@ namespace Payment.Device
             }
             while (this.state == PaxState.Durum_Bilgilendirme_Alindi)
             {
-                Thread.Sleep(10);
+                await Task.Delay(10);
             }
             if (this.state == PaxState.TimeOut)
             {
@@ -596,7 +596,7 @@ namespace Payment.Device
             else if (this.state == PaxState.Iptal_Islem_Basarili)
             {
                 this.SendACKCommand();
-                Thread.Sleep(2000);
+                await Task.Delay(2000);
                 ret = await this.SendSatisKaydetIstekCommand();
             }
 

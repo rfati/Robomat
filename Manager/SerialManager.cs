@@ -16,7 +16,7 @@ namespace Manager
         private SerialPort serialPort;
         private BackgroundWorker serialPortBackgroundWorker = null;
 
-        public delegate void DeviceDataReceived(string command);
+        public delegate void DeviceDataReceived(byte command);
         public event DeviceDataReceived OnDeviceDataReceived;
 
         public delegate void DeviceDisconnected(string SerialPortName);
@@ -113,7 +113,7 @@ namespace Manager
 
 
 
-        public void Notify(string command)
+        public void Notify(byte command)
         {
             if (OnDeviceDataReceived != null)
                 OnDeviceDataReceived(command);
@@ -121,13 +121,14 @@ namespace Manager
 
         private void SerialPortDataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-
             int receivedByteLen = serialPort.BytesToRead;
-            string readStr;
+            byte readByte;
 
-            readStr = serialPort.ReadExisting();
-            Logger.LogInfo("omode input str: " + readStr);
-            this.Notify(readStr);
+            if(receivedByteLen == 1)
+            {
+                readByte = (byte)serialPort.ReadByte();
+                this.Notify(readByte);
+            }
 
         }
 

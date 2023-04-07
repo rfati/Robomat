@@ -45,7 +45,6 @@ namespace Manager
         public bool allConnectionsOK = false;
         private bool isHomingOK = false;
         private Mode _mode;
-        private OtomatState _state;
 
         protected OtomatManager()
         {
@@ -73,23 +72,19 @@ namespace Manager
         {
             Logger.LogInfo("OtomatManager--> Init()");
 
-            this._mode = Mode.Idle;
             this._modeController = new ModeController();
             this._odemeController = new OdemeController();
             this._robotCafeController = new RobotCafeController();
 
-        }
+            this.SetMode(Mode.Idle);
 
+        }
 
         public void Start()
         {
-            Logger.LogInfo("OtomatManager--> Starting...");
-
-
-            this._modeController.Start();
+            //this._modeController.Start();
             this._odemeController.Start();
             this._robotCafeController.Start();
-
 
             //Thread.Sleep(30000);
 
@@ -98,12 +93,18 @@ namespace Manager
             //deviceConnectionBackgroundWorker.RunWorkerAsync();
 
             //this._modeController.SetMode(Mode.SaleService);
-            Logger.LogInfo("OtomatManager--> Started");
-
-            //this.SetMode(Mode.Idle);
 
         }
 
+        public int DoHoming()
+        {
+            return _robotCafeController.DoHoming();
+        }
+
+        public int GetReadyToSaleService()
+        {
+            return _robotCafeController.GetReadyToSaleService();
+        }
 
 
         void DeviceConnectionBW_DoWork(object sender, DoWorkEventArgs e)
@@ -147,7 +148,7 @@ namespace Manager
         {
             lock (Kontrol)
             {
-                if (_modeController.IsRunning && _odemeController.IsRunning && _robotCafeController.isCafeUniteCOMConnected && _robotCafeController.isRobotArmConnected)
+                if (_modeController.IsRunning && _odemeController.IsRunning && _robotCafeController.isCafeUniteCOMConnected && _robotCafeController.isKiskacUniteCOMConnected && _robotCafeController.isRobotArmConnected)
                 {
                     this.allConnectionsOK = true;
                 }
@@ -166,31 +167,6 @@ namespace Manager
                 if (doHoming == 0)
                     _robotCafeController.GetReadyToSaleService();
             }
-            else if (this._mode == Mode.Bakim)
-            {
-                int doHoming = _robotCafeController.DoHoming();
-            }
-            else if (this._mode == Mode.Yukleme)
-            {
-                int doHoming = _robotCafeController.DoHoming();
-            }
-            else if (this._mode == Mode.Idle)
-            {
-                int doHoming = _robotCafeController.DoHoming();
-            }
-        }
-
-        public Mode GetMode()
-        {
-            return this._mode;
-        }
-
-        public OtomatState GetState()
-        {
-            if (_robotCafeController.IsReadyToSaleService == true)
-                return OtomatState.Normal;
-            else
-                return OtomatState.OutService;
         }
 
         public int DoSatisIslem(SaleOrderCommand command)
@@ -223,11 +199,6 @@ namespace Manager
             foreach (var cartItem in command.SaleOrder)
             {
                 Product product = ProductServices.GetById(cartItem.ProductId);
-                if(product == null)
-                {
-                    Logger.LogError("product is null");
-                    return 1;
-                }
                 int serviceResult = _robotCafeController.DoServiceCommand(cartItem, product);
                 if (serviceResult != 0)
                 {
@@ -238,8 +209,419 @@ namespace Manager
             return 0;
         }
 
+        public int DoServisIslemTest()
+        {
+            Console.WriteLine("4.   Domates Çorbası");
+            Console.WriteLine("6.   Yayla Çorbası");
+            Console.WriteLine("10.  Siyezli Ezogelin Çorbası");
+            Console.WriteLine("12.  Mercimek Çorbası");
+            Console.WriteLine("13.  Kremalı Mantar Çorbası");
+            Console.WriteLine("38.  Kayısı Hoşafı");
+            Console.WriteLine("39.  Etli Nohut");
+            Console.WriteLine("40.  Kuru Fasulye");
+
+            string s = Console.ReadLine();
+
+            Product product = ProductServices.GetById((Convert.ToInt32(s)));
+            //Product product = new Product();
+
+            int serviceResult = _robotCafeController.DoServiceCommandTest(null, product);
+            if (serviceResult != 0)
+            {
+                return 1;
+            }
+
+            return 0;
+        }
 
 
+        public int DoTest(int selectedMethod)
+        {
+            Task<int> testTask = null;
+
+            if (selectedMethod == 1)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoBardakHazirlamaTest(bardakNo:0));
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+
+            if (selectedMethod == 888)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.boyacitesti());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+
+            
+            if (selectedMethod == 2)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoBardakKapakHazirlamaTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+            if (selectedMethod == 3)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoKaseHazirlamaTest(kaseNo:3));
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+            if (selectedMethod == 4)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoKaseKapakHazirlamaTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+            if (selectedMethod == 5)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoBardakYerlestirmeTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+            if (selectedMethod == 6)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoKaseYerlestirmeTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+
+            if (selectedMethod == 1001)
+            {
+
+                testTask = Task.Run(() => _robotCafeController.testService.DoUrunAlmaTest());
+
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+                testTask = Task.Run(() => _robotCafeController.testService.DoKesmeTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+                testTask = Task.Run(() => _robotCafeController.testService.DoBosaltmaBardakTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+                testTask = Task.Run(() => _robotCafeController.testService.DoCopAtmaTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+                
+
+            }
+
+            if (selectedMethod == 1002)
+            {
+
+                testTask = Task.Run(() => _robotCafeController.testService.DoUrunAlmaTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+                testTask = Task.Run(() => _robotCafeController.testService.DoKesmeTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+                testTask = Task.Run(() => _robotCafeController.testService.DoBosaltmaKaseTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+                testTask = Task.Run(() => _robotCafeController.testService.DoCopAtmaTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+
+            }
+
+
+            if (selectedMethod == 33)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoIsitmaBardakTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+            
+            if (selectedMethod == 34)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoIsitmaKaseTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+
+
+
+
+            //if (selectedMethod == 7)
+            //{
+
+            //    for (int i = 0; i < 1; i++)
+            //    {
+            //        //Thread.Sleep(5000);
+
+            //        testTask = Task.Run(() => _robotCafeController.testService.DoUrunAlmaTest(PackageType: AmbalajType.Size_12, packagedService: false));
+            //        testTask.Wait();
+            //        if (testTask.Result != 0)
+            //        {
+            //            return 1;
+            //        }
+
+
+            //    }
+
+
+
+
+            //}
+
+            if (selectedMethod == 333)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoUrunAlmaTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+
+            if (selectedMethod == 8)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoKesmeTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+            //if (selectedMethod == 9)
+            //{
+            //    testTask = Task.Run(() => _robotCafeController.testService.DoIsitmaTest(ambalajType: AmbalajType.Size_12));
+            //    testTask.Wait();
+            //    if (testTask.Result != 0)
+            //    {
+            //        return 1;
+            //    }
+
+            //}
+            if (selectedMethod == 10)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoBosaltmaBardakTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+            if (selectedMethod == 11)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoCopAtmaTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+
+            }
+            if (selectedMethod == 12)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoBardakKapakYerlestirmeTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if (selectedMethod == 13)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoKapKapatmaTest(kapType: KapType.Bardak));
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if (selectedMethod == 14)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoBardakSunumTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if (selectedMethod == 15)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoKaseKapakYerlestirmeTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if (selectedMethod == 16)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoKaseSunumTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if(selectedMethod == 17)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoServisSetiHazirlamaTest(setNo:1));
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if (selectedMethod == 18)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoBosaltmaKaseTest());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if (selectedMethod == 19)
+            {
+                for (int i = 0; i < 1; i++)
+                {
+                    Product product = ProductServices.GetById(4);
+                    testTask = Task.Run(() => _robotCafeController.testService.OtomatServisYap(product));
+                    testTask.Wait();
+                    if (testTask.Result != 0)
+                    {
+                        return 1;
+                    }
+                }
+            }
+            if (selectedMethod == 2222)
+            {
+                Product product = ProductServices.GetById(4);
+
+                for (int i = 0; i < 50; i++)
+                {
+                    testTask = Task.Run(() => _robotCafeController.testService.OtomatServisYap(product));
+                    testTask.Wait();
+                    if (testTask.Result != 0)
+                    {
+                        return 1;
+                    }
+
+                    testTask = Task.Run(() => _robotCafeController.testService.OtomatGetReadyToService());
+                    testTask.Wait();
+                    if (testTask.Result != 0)
+                    {
+                        return 1;
+                    }
+                }
+
+               
+            }
+            if (selectedMethod == 100)
+            {
+                testTask = Task.Run(() => _robotCafeController.testService.DoHoming());
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if (selectedMethod == 101)
+            {
+                Product product = ProductServices.GetById(4);
+                testTask = Task.Run(() => _robotCafeController.testService.GetReadyToService());
+                
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if (selectedMethod == 200)
+            {
+                Product product = ProductServices.GetById(4);
+                testTask = Task.Run(() => _robotCafeController.testService.DoService(product));
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            if (selectedMethod == 300)
+            {
+                Product product = ProductServices.GetById(40);
+                testTask = Task.Run(() => _robotCafeController.testService.DoService(product));
+                testTask.Wait();
+                if (testTask.Result != 0)
+                {
+                    return 1;
+                }
+            }
+            return 0;
+        }
 
     }
 

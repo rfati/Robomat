@@ -38,40 +38,19 @@ namespace RobotCafe.xarm
 
             try
             {
-                Logger.LogInfo("Xarmcontroller creating instance...: ");
+                
                 this.instance_id = XArmAPI.create_instance(this.ip, false);
-                Logger.LogInfo("Xarmcontroller switch to instance...: ");
                 ret = XArmAPI.switch_xarm(this.instance_id);
-                Logger.LogInfo("Xarmcontroller switch to instance result: " + ret);
                 if (ret == 0)
-                {
                     ret = XArmAPI.clean_warn();
-                    Logger.LogInfo("Xarmcontroller clean warn result: " + ret);
-                }
                 if (ret == 0)
-                {
                     ret = XArmAPI.clean_error();
-                    Logger.LogInfo("Xarmcontroller clean error result: " + ret);
-                }
-
                 if (ret == 0)
-                {
                     ret = XArmAPI.motion_enable(true);
-                    Logger.LogInfo("Xarmcontroller motion enable result: " + ret);
-                }
-
                 if (ret == 0)
-                {
                     ret = XArmAPI.set_mode(0);
-                    Logger.LogInfo("Xarmcontroller set mode result: " + ret);
-                }
-
                 if (ret == 0)
-                {
                     ret = XArmAPI.set_state(0);
-                    Logger.LogInfo("Xarmcontroller set state result: " + ret);
-                }
-
                 if (ret == 0)
                 {
                     this.IsXArmReady = true;
@@ -86,7 +65,6 @@ namespace RobotCafe.xarm
             }
             catch (Exception ex)
             {
-                Logger.LogError("Xarmcontroller exception: " + ex.Message);
                 throw ex;
             }
 

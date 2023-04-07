@@ -62,12 +62,4 @@ namespace Common
         Yukleme,
         Bakim
     }
-
-    public enum OtomatState
-    {
-        Normal,
-        OutService
-    }
-
-    
 }

@@ -114,7 +114,7 @@ namespace RobotCafe.Devices
         public CafeKapUnite()
         {
             this.slaveAddress = 0x51;
-
+            this.state = State.Idle;
             ushort lastReg = 15;
             for (ushort regaddress = 0; regaddress <= lastReg; regaddress++)
             {
@@ -148,7 +148,7 @@ namespace RobotCafe.Devices
 
 
 
-        private List<Sensor> KapSensorOku()
+        private async Task<List<Sensor>> KapSensorOku()
         {
             List<Sensor> sensorList = new List<Sensor>();
             sensorList.Clear();
@@ -171,7 +171,7 @@ namespace RobotCafe.Devices
             sensorList.Add(this.kapSensor.HazirBardakKapak_Sensor);
 
 
-            SensorCommandResult ret = ReadMultipleSensor(sensorList);
+            SensorCommandResult ret = await ReadMultipleSensor(sensorList);
             if (!ret.IsSuccess())
             {
                 return null;

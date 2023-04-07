@@ -13,7 +13,9 @@ namespace RobotCafe.Service
 
     public interface IServiceMethod
     {
-        int DoService(OtomatUnite otomatUnite, RobotCafeUnite robotCafeUnite, Product product);
+        Task<int> DoService(OtomatUnite otomatUnite, RobotCafeUnite robotCafeUnite, Product product);
+
+        Task<int> GetReadyToService(OtomatUnite otomatUnite, RobotCafeUnite robotCafeUnite);
 
     }
 

@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace RobotCafe.Service
@@ -15,174 +14,122 @@ namespace RobotCafe.Service
     public class PackageServiceMethod : IServiceMethod
     {
         private PackageServiceXArmPath path;
-        private OtomatUnite otomatUnite;
-        private RobotCafeUnite robotCafeUnite;
-        private Product product;
-
-        private int OtomatServiceResult = -1;
-        private int KapYerlestirResult = -1;
-        private int OtomatReadyResult = -1;
-        private int CafeReadyResult = -1;
-        private int UrunTeslimResult = -1;
-
         public PackageServiceMethod(IXArmPath path)
         {
             this.path = (PackageServiceXArmPath)path;
         }
 
-
-        public int UrunTeslimVeGetReadyToService(OtomatUnite otomatUnite, RobotCafeUnite robotCafeUnite)
+        public async Task<int> GetReadyToService(OtomatUnite otomatUnite, RobotCafeUnite robotCafeUnite)
         {
-            this.UrunTeslimVeGetReadyToService();
-            if (OtomatReadyResult == 0 && CafeReadyResult == 0 && UrunTeslimResult == 0)
-            {
-                return 0;
-            }
-            else
-            {
-                return 1;
-            }
+            return 0;
         }
 
-        private void UrunTeslimVeGetReadyToService()
+
+
+        public async Task<int> DoService(OtomatUnite otomatUnite, RobotCafeUnite robotCafeUnite, Product product)
         {
-            Thread t1 = new Thread(new ThreadStart(DoOtomatReadyToService));
-            Thread t2 = new Thread(new ThreadStart(DoCafeReadyToService));
-            Thread t3 = new Thread(new ThreadStart(DoUrunTeslim));
-
-            t3.Start();
-            t2.Start();
-            t1.Start();
-
-            t3.Join();
-            t2.Join();
-            t1.Join();
-
-        }
-
-        private void DoOtomatReadyToService()
-        {
-            OtomatReadyResult = otomatUnite.GetReadyToService();
-        }
-
-        private void DoCafeReadyToService()
-        {
-            CafeReadyResult = robotCafeUnite.GetReadyToNewService();
-        }
-
-        private void DoUrunTeslim()
-        {
-            UrunTeslimResult = robotCafeUnite.DoUrunTeslim(ServiceType.Package);
-        }
-
-        private void OtomatDoService()
-        {
-            bool isUrunCafede = false;
             int ret = 0;
-            for (int i = 0; i < 3; i++)
+            List<Task<int>> paralelTasks = new List<Task<int>>();
+
+
+            bool isUrunCafede = false;
+            for (int i = 0; i < 2; i++)
             {
-
-                OtomatServiceResult = otomatUnite.DoService(this.product);
-                if (OtomatServiceResult == 0)
+                isUrunCafede = robotCafeUnite.urunAlmaUnite.UrunAlindimi();
+                if (isUrunCafede == false)
                 {
-                    int tryCounter = 0;
-                    while (true)
+                    paralelTasks.Add(otomatUnite.ServisYap(product));
+                    ret = await this.RunAsyncParalelTasks(paralelTasks);
+                    if (ret != 0)
                     {
-                        tryCounter++;
-                        isUrunCafede = robotCafeUnite.urunAlmaUnite.UrunAlindimi();
-                        if (isUrunCafede == false)
-                        {
-                            Thread.Sleep(20);
-                            if (tryCounter > 200)
-                                break;
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        return 1;
                     }
-
-                    if (isUrunCafede == true)
-                    {
-                        ret = this.robotCafeUnite.urunAlmaUnite.SetPositionTask(ret, donmePos: null, lineerPos: 40);
-                        ret = this.robotCafeUnite.urunAlmaUnite.SetPositionTask(ret, donmePos: 33, lineerPos: null);
-
-                        OtomatServiceResult = ret;
-                        break;
-                    }
-                    else
-                    {
-                        OtomatServiceResult = 1;
-                        break;
-                    }
-
-
+                    paralelTasks.Clear();
 
                 }
                 else
                 {
-                    ret = otomatUnite.GetReadyToService();
-                    if (ret != 0)
-                    {
-                        OtomatServiceResult = 1;
-                        break;
-                    }
+                    break;
                 }
             }
 
-
-        }
-
-
-
-
-        public int DoService(OtomatUnite otomatUnite, RobotCafeUnite robotCafeUnite, Product product)
-        {
-            int ret = 0;
-
-            this.otomatUnite = otomatUnite;
-            this.robotCafeUnite = robotCafeUnite;
-            this.product = product;
-
-            OtomatDoService();
-
-            if (OtomatServiceResult == 0)
+            isUrunCafede = robotCafeUnite.urunAlmaUnite.UrunAlindimi();
+            if (isUrunCafede == false)
             {
-                ret = 0;
+                return 1;
             }
             else
             {
-                return 1;
+
+                paralelTasks.Add(robotCafeUnite.DoUrunAlmaTest(product.PackageType, packagedService:true));
+                paralelTasks.Add(otomatUnite.GetReadyToService());
+
+                ret = await this.RunAsyncParalelTasks(paralelTasks);
+                if (ret != 0)
+                {
+                    return 1;
+                }
+                paralelTasks.Clear();
+
+
+
+                ret = await robotCafeUnite.DoAmbalajSunumTest(); 
+                if (ret != 0)
+                {
+                    return 1;
+                }
+
+
+                ret = await robotCafeUnite.DoServisSetiHazirlamaTest(setNo: 0);
+                if (ret != 0)
+                {
+                    return 1;
+                }
+
+                paralelTasks.Add(robotCafeUnite.DoAmbalajTeslimTest());
+                paralelTasks.Add(robotCafeUnite.DoSelamlamaTest());
+                ret = await this.RunAsyncParalelTasks(paralelTasks);
+                if (ret != 0)
+                {
+                    return 1;
+                }
+                paralelTasks.Clear();
+
+
             }
-
-
-            ret = robotCafeUnite.DoUrunAlma(ServiceType.Package);
-            if (ret != 0)
-            {
-                return 1;
-            }
-            ret = robotCafeUnite.DoPackageService();
-            if (ret != 0)
-            {
-                return 1;
-            }
-
-            ret = this.UrunTeslimVeGetReadyToService(otomatUnite, robotCafeUnite);
-
-            if (ret != 0)
-            {
-                return 1;
-            }
-
 
 
 
             return 0;
-
-
         }
 
 
 
+        private async Task<int> RunAsyncParalelTasks(List<Task<int>> paralelTasks)
+        {
+            int ret = -1;
+            int taskCounter = paralelTasks.Count;
+            while (taskCounter > 0)
+            {
+                Task<int> finishedTask = await Task.WhenAny(paralelTasks);
+                taskCounter--;
+                //paralelTasks.Remove(finishedTask);
+            }
+            foreach (var task in paralelTasks)
+            {
+                if (task.Result == 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+
+            ret = 0;
+            return ret;
+
+        }
     }
 }

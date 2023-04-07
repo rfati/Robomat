@@ -276,7 +276,7 @@ using System.Timers;
 //            this.serialManager.SendEOT();
 //        }
 
-//        public int SendSatisIstekCommand(int price)
+//        public async Task<int> SendSatisIstekCommand(int price)
 //        {
 //            int ret = -1;
 //            int ack_resp = -1;
@@ -287,7 +287,7 @@ using System.Timers;
 //            this.state = PaxState.Satis_Istek_Sent;
 //            this.SendCommand(command);
 
-//            Thread.Sleep(500);
+//            await Task.Delay(500);
 //            ack_resp = this.serialManager.GetResponse(length: 2);
 //            if (ack_resp != 0)
 //            {
@@ -324,7 +324,7 @@ using System.Timers;
 
 //            while (this.state == PaxState.Kart_Okundu)
 //            {
-//                Thread.Sleep(10);
+//                await Task.Delay(10);
 //            }
 //            if (this.state == PaxState.TimeOut)
 //            {
@@ -343,7 +343,7 @@ using System.Timers;
 //            else if (this.state == PaxState.Satis_Islem_Basarili)
 //            {
 //                this.SendACKCommand();
-//                Thread.Sleep(2000);
+//                await Task.Delay(2000);
 //                ret = await this.SendSatisKaydetIstekCommand();
 //            }
 
@@ -362,7 +362,7 @@ using System.Timers;
 
 //            while (this.state == PaxState.Satis_Kaydet_Sent)
 //            {
-//                Thread.Sleep(50);
+//                await Task.Delay(50);
 //            }
 //            if (this.state == PaxState.TimeOut)
 //            {
@@ -376,7 +376,7 @@ using System.Timers;
 //                this.StartResponseTimeoutTimer(ms: 2000);
 //                while (this.state == PaxState.Satis_Kaydet_Isleme_Alindi)
 //                {
-//                    Thread.Sleep(10);
+//                    await Task.Delay(10);
 //                }
 //                if (this.state == PaxState.TimeOut)
 //                {
@@ -401,7 +401,7 @@ using System.Timers;
 //                }
 //                while (this.state == PaxState.Satis_Kaydet_Basarili || this.state == PaxState.Satis_Kaydet_Basarisiz)
 //                {
-//                    Thread.Sleep(50);
+//                    await Task.Delay(50);
 //                }
 //                if (this.state == PaxState.TimeOut)
 //                {
@@ -430,7 +430,7 @@ using System.Timers;
 //            }
 //            while (this.state == PaxState.Satis_Kaydet_Basarili || this.state == PaxState.Satis_Kaydet_Basarisiz)
 //            {
-//                Thread.Sleep(150);
+//                await Task.Delay(150);
 //            }
 //            if (this.state == PaxState.TimeOut)
 //            {
@@ -457,7 +457,7 @@ using System.Timers;
 //            }
 //            while (this.state == PaxState.GunSonu_Baslatildi)
 //            {
-//                Thread.Sleep(10);
+//                await Task.Delay(10);
 //            }
 //            if (this.state == PaxState.TimeOut)
 //            {
@@ -480,7 +480,7 @@ using System.Timers;
 //            }
 //            while (this.state == PaxState.GunSonu_Basarili || this.state == PaxState.GunSonu_Basarisiz)
 //            {
-//                Thread.Sleep(10);
+//                await Task.Delay(10);
 //            }
 //            if (this.state == PaxState.TimeOut)
 //            {
@@ -507,7 +507,7 @@ using System.Timers;
 
 //            while (this.state == PaxState.Iptal_Istek_Sent)
 //            {
-//                Thread.Sleep(10);
+//                await Task.Delay(10);
 //            }
 //            if (this.state == PaxState.TimeOut)
 //            {
@@ -522,7 +522,7 @@ using System.Timers;
 //            }
 //            while (this.state == PaxState.Iptal_Istek_Isleme_Alindi)
 //            {
-//                Thread.Sleep(10);
+//                await Task.Delay(10);
 //            }
 //            if (this.state == PaxState.TimeOut)
 //            {
@@ -539,7 +539,7 @@ using System.Timers;
 //            }
 //            while (this.state == PaxState.Kart_Okundu)
 //            {
-//                Thread.Sleep(10);
+//                await Task.Delay(10);
 //            }
 //            if (this.state == PaxState.TimeOut)
 //            {
@@ -558,7 +558,7 @@ using System.Timers;
 //            else if (this.state == PaxState.Iptal_Islem_Basarili)
 //            {
 //                this.SendACKCommand();
-//                Thread.Sleep(2000);
+//                await Task.Delay(2000);
 //                ret = await this.SendSatisKaydetIstekCommand();
 //            }
 

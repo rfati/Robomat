@@ -27,68 +27,8 @@ namespace RobotCafe.Service
             this.otomatUrunAlmaUnite = otomatUrunAlmaUnite;
         }
 
-        public int DoHoming()
+        public async Task<int> ServisYap(Product product)
         {
-            int ret = -1;
-            ret = this.otomatAsansorUnite.DoHoming();
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Asansör homing Error...");
-                return 1;
-            }
-
-
-
-            ret =   this.otomatUrunAlmaUnite.DoHoming();
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Urun Alma ünitesi homing Error...");
-                return 1;
-            }
-
-
-
-            return 0;
-
-        }
-
-        public int GetHomingReadyToService()
-        {
-            int ret = 0;
-            ret =   this.otomatAsansorUnite.SetPositionTask(ret: ret, yatayPos: 180, dikeyPos: 235);
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Asansör ünite  GetHomingReadyToService Error.");
-            }
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, null, null, null, null, null);
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Urun Alma Unite  GetHomingReadyToService Error.");
-            }
-
-            return 0;
-        }
-
-        public int GetReadyToService()
-        {
-
-            int ret = 0;
-
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 0, 120, 120, 3, 80, 80);
-
-            ret =   this.otomatAsansorUnite.SetPositionTask(ret: ret, yatayPos: 180, dikeyPos: null);
-            ret =   this.otomatAsansorUnite.SetPositionTask(ret: ret, yatayPos: null, dikeyPos: 235);
-            if (ret != 0)
-                return 1;
-
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 0, 40, 40, 3, 15, 80);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, 40, 40, 3, 15, 80);
-            return ret;
-        }
-
-        public int DoService(Product product)
-        {
-
             RafBolme raf = product.RafBolmes.Where(o => o.StockAdet > 0).FirstOrDefault();
             if (raf == null)
             {
@@ -97,27 +37,26 @@ namespace RobotCafe.Service
             int ret = 0;
 
             int MotorRunTimeDuration = 2600;
-            short AtmaNoktasıDikeyPos = 235;
-            short AtmaNoktasıYatayPos = 250;
-            short RafDikeyPos = (short)raf.YPos;
-            short RafYatayPos = (short)raf.XPos;
-            short MotorSlaveAddress = raf.MotorSlaveAddress;
-            ushort MotorRegNo = (ushort)raf.MotorRegNo;
+            short AtmaNoktasıDikeyPos = 246; 
+            short AtmaNoktasıYatayPos = 244; 
 
 
-            ret =   this.otomatAsansorUnite.SetPositionTask(ret: ret, yatayPos: RafYatayPos, dikeyPos: RafDikeyPos);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, 40, 40, 3, 45, 80);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, 120, 120, 3, 45, 110);
+            //int ret = await this.otomatAsansorUnite.SetPosition(dikeyPos: (short)raf.YPos, yatayPos: (short)raf.XPos);
+            //if (ret != 0)
+            //    return 1;
+            
+
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 50, 50, 14, 60,null, isTogether:true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 120, 120, 14, 60, null, isTogether: true);
 
             bool isUrunReady = this.otomatUrunAlmaUnite.UrunAlindimi();
 
             int tryCounter = 1;
             while (isUrunReady == false)
             {
-                  this.otomatMotorUniteList.Where(o => o.slaveAddress == MotorSlaveAddress).First().RunMotor(Register_Address: MotorRegNo, RunTimeDuration: (MotorRunTimeDuration / tryCounter));
+                await this.otomatMotorUniteList.Where(o => o.slaveAddress == raf.MotorSlaveAddress).First().RunMotor(Register_Address: (ushort)raf.MotorRegNo, RunTimeDuration: (MotorRunTimeDuration / tryCounter));
 
-                Thread.Sleep(500);
-
+                await Task.Delay(500);
                 isUrunReady = this.otomatUrunAlmaUnite.UrunAlindimi();
                 tryCounter++;
 
@@ -127,38 +66,101 @@ namespace RobotCafe.Service
                 }
             }
 
-            product.StockAdet--;
-            raf.StockAdet--;
-            ProductServices.Update(product, raf);
-
-            Thread.Sleep(300);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, 40, 40, 3, 45, 110);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, 40, 40, 3, 45, 80);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, 40, 40, 3, 220, 80);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, 120, 120, 3, 220, 80);
-            Thread.Sleep(200);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, 40, 40, 3, 220, 80);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 150, 40, 40, 3, 15, 80);
-
-            ret =   this.otomatAsansorUnite.SetPositionTask(ret: ret, yatayPos: 180, dikeyPos: 235);
-
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 0, 40, 40, 3, 15, 80);
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 0, 40, 40, 3, 80, 80);
-
-            ret =   this.otomatAsansorUnite.SetPositionTask(ret: ret, yatayPos: AtmaNoktasıYatayPos, dikeyPos: AtmaNoktasıDikeyPos);
-
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 0, 120, 120, 3, 80, 80);
-
-            Thread.Sleep(300);
-
-            ret =   this.otomatUrunAlmaUnite.SetPositionTask(ret, 0, 120, 120, 80, 80, 80);
+            await Task.Delay(500);
+           
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 50, 50, 14, 190,null, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 120, 120, 14, 190, null, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 45, 45, 14, 190, null, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 45, 45, 14, 25, null, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 45, 45, 14, 25, null, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 45, 45, 14, 100, null, isTogether: true);
 
 
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 80, 80, 14, 120, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 45, 45, 14, 120, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 45, 45, 14, 190, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 120, 120, 14, 190, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 45, 45, 14, 190, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 45, 45, 14, 25, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 45, 45, 14, 25, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 45, 45, 14, 100, isTogether: true);
+
+            //ret = await this.otomatAsansorUnite.SetDikeyPosition(dikeyPos: AtmaNoktasıDikeyPos);
+            //if (ret != 0)
+            //    return 1;
+
+            //ret = await this.otomatAsansorUnite.SetYatayPosition(yatayPos: AtmaNoktasıYatayPos);
+            //if (ret != 0)
+            //    return 1;
+
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 120, 120, 14, 100, null, isTogether: true);
+            //if (ret != 0)
+            //    return 1;
+
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 120, 120, 110, 100, null, isTogether: true);
+            //ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 120, 120, 14, 100, null, isTogether: true);
+
+            //ret = await this.otomatAsansorUnite.SetYatayPosition(yatayPos: 220);
+            //if (ret != 0)
+            //    return 1;
+
+
+            //product.StockAdet--;
+            //raf.StockAdet--;
+            //ProductServices.Update(product,raf);
 
             return ret;
         }
 
+        public async Task<int> DoHoming()
+        {
+            int ret = -1;
+            ret = await this.otomatAsansorUnite.DoHoming();
+            if (ret != 0)
+                return 1;
 
+
+            ret = await this.otomatUrunAlmaUnite.DoHoming();
+            if (ret != 0)
+                return 1;
+
+
+            return 0;
+
+        }
+
+        public async Task<int> GetHomingReadyToService()
+        {
+            int ret = -1;
+            //ret = await this.otomatAsansorUnite.SetPosition(dikeyPos: 240, yatayPos:163);
+            //if (ret != 0)
+            //    return 1;
+
+
+            return 0;
+        }
+
+        public async Task<int> GetReadyToService()
+        {
+            int ret = 0;
+
+            ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 120, 120, 14, 100, null, isTogether: true);
+            ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 120, 120, 14, 25, null, isTogether: true);
+            ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 2, 50, 50, 14, 25, null, isTogether: true);
+            ret = await this.otomatUrunAlmaUnite.SetPositionTask(ret, 55, 50, 50, 14, 25, null, isTogether: true);
+            if (ret != 0)
+                return 1;
+
+            //ret = await this.otomatAsansorUnite.SetYatayPosition(yatayPos: 163);
+            //if (ret != 0)
+            //    return 1;
+
+            //ret = await this.otomatAsansorUnite.SetDikeyPosition(dikeyPos: 240);
+            //if (ret != 0)
+            //    return 1;
+
+            return 0;
+        }
 
 
 

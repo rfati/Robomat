@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace RobotCafe.Devices
@@ -16,6 +15,7 @@ namespace RobotCafe.Devices
         public OtomatAsansorUnite()
         {
             this.slaveAddress = 0x05;
+            this.NextReadDelay = 10;
 
             ushort lastReg = 5;
             for (ushort regaddress = 2; regaddress <= lastReg; regaddress++)
@@ -28,47 +28,62 @@ namespace RobotCafe.Devices
 
         }
 
-        public int DoHoming()
+        public async Task<int> DoHoming()
         {
-            int ret = 0;
-            ret =   this.SetPosition(ret: ret, yatayPos:0, dikeyPos:null);
+            int ret = -1;
+            ret = await this.SetPositionTask(ret: ret, yatayPos:0, dikeyPos:null);
             if (ret != 0)
                 return 1;
 
-            Thread.Sleep(8000);
-
-            ret =   this.SetPosition(ret: ret, yatayPos: null, dikeyPos: 0);
+            ret = await this.SetPositionTask(ret: ret, yatayPos: null, dikeyPos: 0);
             if (ret != 0)
                 return 1;
-            Thread.Sleep(8000);
 
             return 0;
 
         }
 
 
+        //public async Task<int> SetPosition(short dikeyPos, short yatayPos)
+        //{
+        //    int ret = -1;
+
+        //    List<Motor> motorList = new List<Motor>();
+        //    MotorCommandResult retMotor = null;
+
+        //    motorList.Clear();
+        //    this.asansor.Asansor_YatayStep.TargetPosRegisterWrite.Register_Target_Value = yatayPos;
+        //    this.asansor.Asansor_DikeyStep.TargetPosRegisterWrite.Register_Target_Value = dikeyPos;
+
+        //    motorList.Add(this.asansor.Asansor_YatayStep);
+        //    motorList.Add(this.asansor.Asansor_DikeyStep);
+
+        //    retMotor = await WriteReadMultipleMotor(motorList, isTogether:true);
+
+        //    if (!retMotor.IsSuccess())
+        //    {
+        //        ret = -1;
+        //        return ret;
+        //    }
+
+        //    ret = 0;
+        //    return ret;
+
+        //}
 
 
-        public int SetPositionTask(int ret, short? yatayPos, short? dikeyPos)
+        public async Task<int> SetPositionTask(int ret, short? yatayPos, short? dikeyPos, int delay=1000)
         {
             if (ret != 0)
                 return 1;
-            ret =   SetPosition(ret, yatayPos, dikeyPos);
-            ret =   IsPositionOK(ret, yatayPos, dikeyPos);
-
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Asansör ünitesi SetPositionTask Error.");
-            }
-
-            return ret;
+            ret = await SetPosition(ret, yatayPos, dikeyPos);
+            return await IsPositionOK(ret, yatayPos, dikeyPos);
         }
 
-        public int SetPosition(int ret, short? yatayPos, short? dikeyPos)
+        public async Task<int> SetPosition(int ret, short? yatayPos, short? dikeyPos)
         {
             if (ret != 0)
                 return 1;
-            bool isTogether = false;
             List<Motor> motorList = new List<Motor>();
             if (yatayPos != null)
             {
@@ -81,22 +96,11 @@ namespace RobotCafe.Devices
                 motorList.Add(this.asansor.Asansor_DikeyStep);
             }
 
-            if(yatayPos != null && dikeyPos != null)
-            {
-                isTogether = true;
-            }
 
-
-            ret =   SetMotorPosition(motorList, isTogether: isTogether);
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Asansör ünitesi SetPosition Error.");
-            }
-
-            return ret;
+            return await SetMotorPosition(motorList, isTogether:true);
         }
 
-        public int IsPositionOK(int ret, short? yatayPos, short? dikeyPos)
+        public async Task<int> IsPositionOK(int ret, short? yatayPos, short? dikeyPos)
         {
             if (ret != 0)
                 return 1;
@@ -113,13 +117,7 @@ namespace RobotCafe.Devices
             }
            
 
-            ret =    IsMotorPositionOK(motorList);
-            if (ret != 0)
-            {
-                Logger.LogError("Otomat Asansör ünitesi IsPositionOK Error.");
-            }
-
-            return ret;
+            return await IsMotorPositionOK(motorList);
         }
 
 
