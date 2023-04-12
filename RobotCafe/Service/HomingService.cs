@@ -33,15 +33,15 @@ namespace RobotCafe.Service
         {
 
 
-            Thread t1 = new Thread(new ThreadStart(DoOtomatHoming));
-            Thread t2 = new Thread(new ThreadStart(DoCafeHoming));
-            t1.Start();
-            t2.Start();
+            DoOtomatHoming();
+            //Thread t2 = new Thread(new ThreadStart(DoCafeHoming));
+            //t1.Start();
+            //t2.Start();
 
-            t1.Join();
-            t2.Join();
+            //t1.Join();
+            //t2.Join();
 
-            if (OtomatHomingResult == 0 && CafeHomingResult == 0)
+            if (CafeHomingResult == 0)
             {
                 HomingResult = 0;
             }

@@ -70,7 +70,7 @@ namespace RobotCafe.Devices
         {
             try
             {
-                if(this.isAttachedToCOM == false)
+                if (this.isAttachedToCOM == false)
                 {
                     this.serialManager = serialManager;
                     this.serialManager.Attach(this);
@@ -117,7 +117,7 @@ namespace RobotCafe.Devices
                 RegisterWriteList.Add(motor.TargetPosRegisterWrite);
             }
 
-            for(int i = 0; i < MAX_WRITE_TRY_COUNTER; i++)
+            for (int i = 0; i < MAX_WRITE_TRY_COUNTER; i++)
             {
                 if (isTogether == true)
                 {
@@ -155,7 +155,7 @@ namespace RobotCafe.Devices
         {
             MotorCommandResult ret = new MotorCommandResult();
 
-            for(int i = 0; i < 400; i++)
+            for (int i = 0; i < 400; i++)
             {
                 ret.retReadRegisterResult = this.ReadAllRegisters();
                 if (ret.retReadRegisterResult == 0)
@@ -374,7 +374,7 @@ namespace RobotCafe.Devices
             {
                 return -1;
             }
-            
+
 
 
 
@@ -407,7 +407,7 @@ namespace RobotCafe.Devices
             ResponseTimer.Enabled = false;
             if (packet == null)
             {
-                Logger.LogError("RTU Device state= Timeout geldi................ slaveAdd: "+slaveAddress);
+                Logger.LogError("RTU Device state= Timeout geldi................ slaveAdd: " + slaveAddress);
                 this.state = State.TimeOut;
                 return;
             }
@@ -451,7 +451,7 @@ namespace RobotCafe.Devices
             {
                 byte x1 = packet.Data[i * 2];
                 byte x2 = packet.Data[i * 2 + 1];
-                this.RegisterReadList[i].Register_Read_Value = (short)(x1*256 + x2);
+                this.RegisterReadList[i].Register_Read_Value = (short)(x1 * 256 + x2);
             }
             this.state = State.StatusResponseReceived;
 
@@ -558,7 +558,7 @@ namespace RobotCafe.Devices
             return CRC;
         }
 
-       
+
 
 
     }

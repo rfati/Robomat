@@ -15,23 +15,23 @@ namespace BLL
         {
             var groupedCartItemList = command.SaleOrder.GroupBy(u => u.ProductId).Select(grp => grp.ToList()).ToList();
 
-            foreach (var CartItemList in groupedCartItemList)
-            {
-                int TotalOrderQuantityofProduct = 0;
-                int productId = CartItemList[0].ProductId;
-                foreach (var CartItem in CartItemList)
-                {
-                    TotalOrderQuantityofProduct = TotalOrderQuantityofProduct + CartItem.Quantity;
+            //foreach (var CartItemList in groupedCartItemList)
+            //{
+            //    int TotalOrderQuantityofProduct = 0;
+            //    int productId = CartItemList[0].ProductId;
+            //    foreach (var CartItem in CartItemList)
+            //    {
+            //        TotalOrderQuantityofProduct = TotalOrderQuantityofProduct + CartItem.Quantity;
 
-                }
+            //    }
 
-                Product product = ProductServices.GetById(productId);
+            //    Product product = ProductServices.GetById(productId);
 
-                if (TotalOrderQuantityofProduct > product.StockAdet)
-                {
-                    return 1;
-                }
-            }
+            //    //if (TotalOrderQuantityofProduct > product.StockAdet)
+            //    //{
+            //    //    return 1;
+            //    //}
+            //}
 
             return 0;
 

@@ -38,6 +38,9 @@ namespace RobotCafe
 
         public List<OtomatMotorUnite> otomatMotorUniteList;
         public OtomatUrunAlmaUnite otomatUrunAlmaUnite;
+
+        
+
         public OtomatAsansorUnite otomatAsansorUnite;
 
         public RobotArm robotArm;
@@ -379,70 +382,15 @@ namespace RobotCafe
         }
 
 
-        public int DoServiceCommand(CartItemMessage cartItem, Product product)
+        public int DoServiceCommand(Product product)
         {
-            int ret = 1;
+            
+                int ret = 1;
+                Logger.LogInfo("DoServiceCommand HotServiceMethod starting ....");
+                saleService.SetServiceMethod(new HotServiceMethod(HotServiceType.Sicak, this.hotServiceXArmPath));
+                ret = saleService.DoService(product);
 
-            if (this.IsHomingOK == false)
-            {
-                Logger.LogError("DoServiceCommand not starting .... this.IsHomingOK = false");
                 return ret;
-            }
-
-            Logger.LogInfo("DoServiceCommand starting ....");
-
-            for (int i = 0; i < cartItem.Quantity; i++)
-            {
-                if (cartItem.serviceType == ServiceType.Hot)
-                {
-                    if (product.ServisType == 1)
-                    {
-                        saleService.SetServiceMethod(new ColdServiceMethod(this.coldServiceXArmPath));
-                        ret = saleService.DoService(product);
-                        if (ret != 0)
-                            break;
-                    }
-                    else
-                    {
-                        Logger.LogInfo("DoServiceCommand HotServiceMethod starting ....");
-                        saleService.SetServiceMethod(new HotServiceMethod(cartItem.hotServiceType, this.hotServiceXArmPath));
-                        ret = saleService.DoService(product);
-                        if (ret != 0)
-                            break;
-                    }
-
-                }
-                else if (cartItem.serviceType == ServiceType.Cold)
-                {
-                    saleService.SetServiceMethod(new ColdServiceMethod(this.coldServiceXArmPath));
-                    ret = saleService.DoService(product);
-                    if (ret != 0)
-                        break;
-                }
-                else if (cartItem.serviceType == ServiceType.Package)
-                {
-                    saleService.SetServiceMethod(new PackageServiceMethod(this.packageServiceXArmPath));
-                    ret = saleService.DoService(product);
-                    if (ret != 0)
-                        break;
-                }
-
-                if (ret != 0)
-                    break;
-
-
-            }
-
-            if (ret == 0)
-            {
-                this.IsReadyToSaleService = true;
-            }
-            else
-            {
-                this.IsReadyToSaleService = false;
-            }
-
-            return ret;
 
         }
 

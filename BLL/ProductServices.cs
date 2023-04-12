@@ -43,7 +43,7 @@ namespace BLL
         {
             using (RobomatUnitOfWork worker = new RobomatUnitOfWork())
             {
-                worker.ProductRepository.Insert(obj);
+                //worker.ProductRepository.Insert(obj);
             }
         }
 
@@ -51,8 +51,8 @@ namespace BLL
         {
             using (RobomatUnitOfWork worker = new RobomatUnitOfWork())
             {
-                worker.ProductRepository.Update(product);
-                worker.RafBolmeRepository.Update(raf);
+                //worker.ProductRepository.Update(product);
+                //worker.RafBolmeRepository.Update(raf);
             }
         }
     }

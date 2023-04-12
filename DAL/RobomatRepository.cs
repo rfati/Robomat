@@ -37,6 +37,7 @@ namespace DAL
 
         public virtual IList<T> GetAll(params Expression<Func<T, object>>[] navigationProperties)
         {
+
             IQueryable<T> dbQuery = _dbSet;
             foreach (Expression<Func<T, object>> navigationProperty in navigationProperties)
                 dbQuery = dbQuery.Include<T, object>(navigationProperty);

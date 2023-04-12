@@ -35,6 +35,23 @@ namespace Manager
 
 
         private ModeController _modeController;
+
+        public int DoTestServisIslem(int Id)
+        {
+            Product product = ProductServices.GetById(Id);
+            if (product == null)
+            {
+                Logger.LogError("product is null");
+                return 1;
+            }
+            int serviceResult = _robotCafeController.DoServiceCommand(product);
+            if (serviceResult != 0)
+            {
+                return 1;
+            }
+            return 0;
+        }
+
         private RobotCafeController _robotCafeController;
         private OdemeController _odemeController;
 
@@ -162,9 +179,9 @@ namespace Manager
             this._mode = mode;
             if (this._mode == Mode.SaleService)
             {
-                int doHoming = _robotCafeController.DoHoming();
-                if (doHoming == 0)
-                    _robotCafeController.GetReadyToSaleService();
+                //int doHoming = _robotCafeController.DoHoming();
+                //if (doHoming == 0)
+                //    _robotCafeController.GetReadyToSaleService();
             }
             else if (this._mode == Mode.Bakim)
             {
@@ -228,7 +245,7 @@ namespace Manager
                     Logger.LogError("product is null");
                     return 1;
                 }
-                int serviceResult = _robotCafeController.DoServiceCommand(cartItem, product);
+                int serviceResult = _robotCafeController.DoServiceCommand(product);
                 if (serviceResult != 0)
                 {
                     return 1;

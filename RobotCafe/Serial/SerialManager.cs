@@ -37,6 +37,10 @@ namespace RobotCafe.Serial
     }
     public class TXRXData
     {
+        public TXRXData()
+        {
+
+        }
         public byte SlaveAddress;
         public byte[] data;
         public int receiveSize;
@@ -45,6 +49,7 @@ namespace RobotCafe.Serial
 
     public class SerialManager
     {
+       
         public string portName;
         private int baudRate;
         object lockd = new object();

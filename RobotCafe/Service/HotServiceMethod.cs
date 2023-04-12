@@ -60,6 +60,8 @@ namespace RobotCafe.Service
             }
         }
 
+       
+
         private void UrunTeslimVeGetReadyToService()
         {
             Thread t1 = new Thread(new ThreadStart(DoOtomatReadyToService));
@@ -186,6 +188,17 @@ namespace RobotCafe.Service
 
         }
 
+        public int DoHoming()
+        {
+            int ret = 0;
+            ret = robotCafeUnite.DoHoming();
+            if (ret != 0)
+            {
+                return 1;
+            }
+            return ret;
+        }
+
         public int DoService(OtomatUnite otomatUnite, RobotCafeUnite robotCafeUnite, Product product)
         {
             int ret = 0;
@@ -194,102 +207,126 @@ namespace RobotCafe.Service
             this.robotCafeUnite = robotCafeUnite;
             this.product = product;
 
-            Thread t1 = new Thread(new ThreadStart(OtomatDoService));
-            Thread t2;
-            if (product.KapType == KapType.Kase)
-            {
-                t2 = new Thread(new ThreadStart(CafeDoHazirlikKase));
-            }
-            else
-            {
-                t2 = new Thread(new ThreadStart(CafeDoHazirlikBardak));
-            }
+            //Thread t1 = new Thread(new ThreadStart(OtomatDoService));
+            //Thread t2;
+            //if (product.KapType == KapType.Kase)
+            //{
+            //    t2 = new Thread(new ThreadStart(CafeDoHazirlikKase));
+            //}
+            //else
+            //{
+            //    t2 = new Thread(new ThreadStart(CafeDoHazirlikBardak));
+            //}
 
-            t1.Start();
-            t2.Start();
-            t1.Join();
-            t2.Join();
+            //t1.Start();
+            //t2.Start();
+            //t1.Join();
+            //t2.Join();
 
-            if (OtomatServiceResult == 0 && KapYerlestirResult == 0)
-            {
-                ret = 0;
-            }
-            else
-            {
-                return 1;
-            }
-
-
-            ret = robotCafeUnite.DoUrunAlma(ServiceType.Hot);
-            if (ret != 0)
-            {
-                return 1;
-            }
+            //if (OtomatServiceResult == 0 && KapYerlestirResult == 0)
+            //{
+            //    ret = 0;
+            //}
+            //else
+            //{
+            //    return 1;
+            //}
 
 
-            ret = robotCafeUnite.DoKesme();
-            if (ret != 0)
+            for (int i = 0; i < 1; i++)
             {
-                return 1;
-            }
+                //ret = robotCafeUnite.DoUrunAlma(ServiceType.Hot);
+                //if (ret != 0)
+                //{
+                //    return 1;
+                //}
 
-            if (product.KapType == KapType.Bardak)
-            {
+                //ret = robotCafeUnite.DoKesme();
+                //if (ret != 0)
+                //{
+                //    return 1;
+                //}
+
+                //ret = robotCafeUnite.DoSallama();
+                //if (ret != 0)
+                //{
+                //    return 1;
+                //}
+
                 ret = robotCafeUnite.DoBosaltmaBardak();
-            }
-            else if (product.KapType == KapType.Kase)
-            {
-                ret = robotCafeUnite.DoBosaltmaKase();
-            }
-
-            if (ret != 0)
-            {
-                return 1;
+                if (ret != 0)
+                {
+                    return 1;
+                }
             }
 
+            
+
+            
 
 
-            ret = robotCafeUnite.DoCopAtma();
-            if (ret != 0)
-            {
-                return 1;
-            }
 
 
-            if (product.KapType == KapType.Bardak)
-            {
-                ret = robotCafeUnite.DoIsitmaBardak(this.BardakIsitmaSuresi);
-            }
-            else if (product.KapType == KapType.Kase)
-            {
-                ret = robotCafeUnite.DoIsitmaKase(this.KaseIsitmaSuresi);
-            }
 
-            if (ret != 0)
-            {
-                return 1;
-            }
+            //    
 
-            if (product.KapType == KapType.Bardak)
-            {
-                ret = robotCafeUnite.DoBardakSunum();
-            }
-            else if (product.KapType == KapType.Kase)
-            {
-                ret = robotCafeUnite.DoKaseSunum();
-            }
+            //    if (product.KapType == KapType.Bardak)
+            //    {
+            //        ret = robotCafeUnite.DoBosaltmaBardak();
+            //    }
+            //    else if (product.KapType == KapType.Kase)
+            //    {
+            //        ret = robotCafeUnite.DoBosaltmaKase();
+            //    }
 
-            if (ret != 0)
-            {
-                return 1;
-            }
+            //    if (ret != 0)
+            //    {
+            //        return 1;
+            //    }
 
-            ret = this.UrunTeslimVeGetReadyToService(otomatUnite, robotCafeUnite);
 
-            if (ret != 0)
-            {
-                return 1;
-            }
+
+            //    ret = robotCafeUnite.DoCopAtma();
+            //    if (ret != 0)
+            //    {
+            //        return 1;
+            //    }
+
+
+            //    if (product.KapType == KapType.Bardak)
+            //    {
+            //        ret = robotCafeUnite.DoIsitmaBardak(this.BardakIsitmaSuresi);
+            //    }
+            //    else if (product.KapType == KapType.Kase)
+            //    {
+            //        ret = robotCafeUnite.DoIsitmaKase(this.KaseIsitmaSuresi);
+            //    }
+
+            //    if (ret != 0)
+            //    {
+            //        return 1;
+            //    }
+
+            //    if (product.KapType == KapType.Bardak)
+            //    {
+            //        ret = robotCafeUnite.DoBardakSunum();
+            //    }
+            //    else if (product.KapType == KapType.Kase)
+            //    {
+            //        ret = robotCafeUnite.DoKaseSunum();
+            //    }
+
+            //    if (ret != 0)
+            //    {
+            //        return 1;
+            //    }
+
+            //    ret = this.UrunTeslimVeGetReadyToService(otomatUnite, robotCafeUnite);
+
+            //    if (ret != 0)
+            //    {
+            //        return 1;
+            //    }
 
 
 
@@ -297,7 +334,7 @@ namespace RobotCafe.Service
 
             return 0;
 
-            
+
         }
 
 

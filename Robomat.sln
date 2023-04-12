@@ -4,22 +4,42 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.31112.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Model", "Model\Model.csproj", "{C2A4A289-8890-4D0F-BE93-D436EC2EFA02}"
+	ProjectSection(ProjectDependencies) = postProject
+		{64DB8C68-8120-405D-9893-1459CAC5DCCA} = {64DB8C68-8120-405D-9893-1459CAC5DCCA}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAL", "DAL\DAL.csproj", "{79A6AD01-DA0A-42AF-8D66-1B03AAA44F25}"
+	ProjectSection(ProjectDependencies) = postProject
+		{64DB8C68-8120-405D-9893-1459CAC5DCCA} = {64DB8C68-8120-405D-9893-1459CAC5DCCA}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLL", "BLL\BLL.csproj", "{85131EC6-A443-4EB6-8E20-1AEBC5645844}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manager", "Manager\Manager.csproj", "{9F39D5B7-2B61-4EED-BCF7-E08A43802345}"
+	ProjectSection(ProjectDependencies) = postProject
+		{64DB8C68-8120-405D-9893-1459CAC5DCCA} = {64DB8C68-8120-405D-9893-1459CAC5DCCA}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payment", "Payment\Payment.csproj", "{D582F6D7-8785-4E27-84D2-3024DEB6C5C1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RobotCafe", "RobotCafe\RobotCafe.csproj", "{47720ECB-995F-43E8-93B7-1438ECD6D18A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{F829524C-263D-46FC-B1C8-CFA7529B650F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{64DB8C68-8120-405D-9893-1459CAC5DCCA} = {64DB8C68-8120-405D-9893-1459CAC5DCCA}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xarm", "xarm\xarm.vcxproj", "{64DB8C68-8120-405D-9893-1459CAC5DCCA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RobomatService", "RobomatService\RobomatService.csproj", "{25987EBE-717C-49D4-9E76-9596F1B3D888}"
+	ProjectSection(ProjectDependencies) = postProject
+		{64DB8C68-8120-405D-9893-1459CAC5DCCA} = {64DB8C68-8120-405D-9893-1459CAC5DCCA}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoboConsole", "RoboConsole\RoboConsole.csproj", "{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}"
+	ProjectSection(ProjectDependencies) = postProject
+		{64DB8C68-8120-405D-9893-1459CAC5DCCA} = {64DB8C68-8120-405D-9893-1459CAC5DCCA}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -209,6 +229,26 @@ Global
 		{25987EBE-717C-49D4-9E76-9596F1B3D888}.Release|x64.Build.0 = Release|Any CPU
 		{25987EBE-717C-49D4-9E76-9596F1B3D888}.Release|x86.ActiveCfg = Release|Any CPU
 		{25987EBE-717C-49D4-9E76-9596F1B3D888}.Release|x86.Build.0 = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|ARM.Build.0 = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|x64.Build.0 = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Debug|x86.Build.0 = Debug|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|ARM.ActiveCfg = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|ARM.Build.0 = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|ARM64.Build.0 = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|x64.ActiveCfg = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|x64.Build.0 = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|x86.ActiveCfg = Release|Any CPU
+		{DD0619D7-42DD-470F-A59A-65FF0E4ADF19}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
